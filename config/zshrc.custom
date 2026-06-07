@@ -1,0 +1,94 @@
+# =============================================================================
+# ZSH CUSTOM CONFIG — sourced on top of Home Manager's generated .zshrc
+# =============================================================================
+# Things managed by Nix/Home Manager have been removed from this file.
+# See ~/nixos-dotfiles/home/shell.nix for the declarative zsh config.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# ENVIRONMENT VARIABLES
+# -----------------------------------------------------------------------------
+# Ollama local LLM configuration
+export OLLAMA_BASE_URL="http://localhost:11434/v1"
+export OLLAMA_MODEL="qwen2.5-coder:1.5b"
+export OLLAMA_API_KEY="ollama"
+
+# PATH additions — local binaries and language-specific directories
+export PATH="$PATH:/home/venus/.local/bin"           # pipx and local installs
+export PATH="/home/venus/.npm-global/bin:$PATH"      # npm global packages
+export PATH="/usr/lib/cargo/bin:$PATH"               # Rust/Cargo binaries
+export PATH="$PATH:/home/venus/bin"                  # personal scripts
+export PATH="$HOME/bin/ncdu/zig-out/bin:$PATH"       # custom ncdu build
+
+# -----------------------------------------------------------------------------
+# FUZZY FIND FOR CD
+# -----------------------------------------------------------------------------
+# cdf — fuzzy find directories to cd into from specified path
+cdf() {
+    local dir=$(find ${1:-~} -type d 2>/dev/null | fzf)
+    [ -n "$dir" ] && cd "$dir"
+}
+
+# Override cd to use fzf when called without arguments
+cd() {
+    if [ -z "$1" ]; then
+        local dir=$(find ~ -maxdepth 8 -type d 2>/dev/null | fzf)
+        [ -n "$dir" ] && builtin cd "$dir"
+    else
+        builtin cd "$@"
+    fi
+}
+
+# -----------------------------------------------------------------------------
+# YAZI — cd on quit wrapper
+# -----------------------------------------------------------------------------
+function y() {
+    local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
+    command yazi "$@" --cwd-file="$tmp"
+    IFS= read -r -d '' cwd < "$tmp"
+    [ "$cwd" != "$PWD" ] && [ -d "$cwd" ] && builtin cd -- "$cwd"
+    command rm -f -- "$tmp"
+}
+
+# -----------------------------------------------------------------------------
+# CUSTOM AUTOCOMPLETE WIDGET — tab accepts autosuggestion or falls through
+# -----------------------------------------------------------------------------
+_zsh_autosuggest_accept_and_complete() {
+    if [ -n "$POSTDISPLAY" ]; then
+        zle forward-word
+    else
+        zle expand-or-complete
+    fi
+}
+zle -N _zsh_autosuggest_accept_and_complete
+bindkey '^I' _zsh_autosuggest_accept_and_complete
+
+# -----------------------------------------------------------------------------
+# TERMINAL TITLE — updates window title on each prompt
+# -----------------------------------------------------------------------------
+precmd() {
+    print -Pn "\e]0;%n@%m: %~\a"
+}
+
+# -----------------------------------------------------------------------------
+# ARROW KEY HISTORY SEARCH
+# -----------------------------------------------------------------------------
+bindkey '^[[A' history-search-backward
+bindkey '^[[B' history-search-forward
+bindkey '^[OA' history-search-backward
+bindkey '^[OB' history-search-forward
+
+# =============================================================================
+# VAULT RAG SEARCH ALIASES
+# =============================================================================
+alias vault-search="python3 /home/venus/Documents/OBSIDIAN/vault_rag.py search"
+alias vault-search-file="python3 /home/venus/Documents/OBSIDIAN/vault_rag.py search-file"
+alias vault-index="python3 /home/venus/Documents/OBSIDIAN/vault_rag.py index"
+
+# =============================================================================
+# VENUS CUSTOM ALIASES
+# =============================================================================
+alias monolith-gen="~/Documents/OBSIDIAN/_VENUS_FILES/98_IGNORE/MONOLITH_CREATOR.sh"
+alias manifest-gen="Documents/OBSIDIAN/_VENUS_FILES/98_IGNORE/MANIFEST_GENERATOR.sh"
+alias venus-snapshot="~/Documents/OBSIDIAN/_VENUS_FILES/98_IGNORE/MANIFEST_GENERATOR.sh && ~/Documents/OBSIDIAN/_VENUS_FILES/98_IGNORE/MONOLITH_CREATOR.sh"
+alias pes="echo $(($(date +%s) - 921414720))"

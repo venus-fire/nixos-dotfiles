@@ -1,0 +1,16 @@
+# NixOS dotfiles — venus-fire/nixos-dotfiles
+
+# Nix build artifacts
+result
+result-*
+
+# Editor temp files
+*.swp
+*.swo
+*~
+
+# macOS junk
+.DS_Store
+
+# Backup directories (exclude date-stamped backups)
+*.bak
