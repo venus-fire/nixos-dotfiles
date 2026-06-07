@@ -14,3 +14,6 @@ result-*
 
 # Backup directories (exclude date-stamped backups)
 *.bak
+
+# Home Manager backup files from initial deployment
+*.backup

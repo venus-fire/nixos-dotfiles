@@ -8,20 +8,16 @@
     ],
     "states": {
         "keep-awake-plus": {
-            "enabled": true,
-            "sourceUrl": "https://github.com/noctalia-dev/noctalia-plugins"
+            "enabled": true
         },
         "plugin-manager": {
-            "enabled": true,
-            "sourceUrl": "https://github.com/noctalia-dev/noctalia-plugins"
+            "enabled": true
         },
         "privacy-indicator": {
-            "enabled": true,
-            "sourceUrl": "https://github.com/noctalia-dev/noctalia-plugins"
+            "enabled": true
         },
         "timer": {
-            "enabled": true,
-            "sourceUrl": "https://github.com/noctalia-dev/noctalia-plugins"
+            "enabled": true
         }
     },
     "version": 2

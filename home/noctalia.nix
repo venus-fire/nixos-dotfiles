@@ -5,9 +5,14 @@
 
   programs.noctalia-shell = {
     enable = true;
-    # Empty settings = module won't generate a config file.
-    # Your old config is placed at ~/.config/noctalia/ as regular files
-    # so GUI changes save normally.
+    # NOTE: settings = { } means the module won't generate any config files.
+    #       ~/.config/noctalia/ is a SYMLINK to ~/nixos-dotfiles/config/noctalia/
+    #       (created manually: ln -s ~/nixos-dotfiles/config/noctalia ~/.config/noctalia)
+    #
+    #       This means GUI changes write directly into the dotfiles repo.
+    #       To checkpoint: cd ~/nixos-dotfiles && git commit -am "update noctalia"
+    #
+    #       On a fresh install, run that ln -s command after cloning.
     settings = { };
   };
 
