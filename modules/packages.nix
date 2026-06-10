@@ -1,5 +1,17 @@
 { pkgs, inputs, ... }:
 
+let
+  # Hermes Agent with Exa web search SDK baked in at build time.
+  # The Hermes flake's package supports `override` with extraDependencyGroups
+  # to add optional dependency groups (defined in pyproject.toml) that would
+  # otherwise be lazy-installed at runtime — which doesn't work on NixOS
+  # because the Nix store is read-only.
+  #
+  # The "exa" group adds exa-py==2.10.2 for the web_search / web_extract tools.
+  hermes = inputs.hermes-agent.packages.x86_64-linux.default.override {
+    extraDependencyGroups = [ "exa" ];
+  };
+in
 {
   nixpkgs.config.allowUnfree = true;
 
@@ -15,12 +27,14 @@
     fzf
     fd
     yazi
-    inputs.hermes-agent.packages.x86_64-linux.default
+    hermes
     keepassxc
     obsidian
-    udiskie                          # auto-mounter & CLI helpers for external drives
-
-    brightnessctl                    # backlight control for brightness keys
-    gh                               # GitHub CLI
+    udiskie                              # auto-mounter & CLI helpers for external drives
+    brightnessctl                        # backlight control for brightness keys
+    gh                                   # GitHub CLI
+    signal-desktop
+    volantes-cursors                     # cursor theme
+    prismlauncher
   ];
 }

@@ -17,3 +17,6 @@ result-*
 
 # Home Manager backup files from initial deployment
 *.backup
+
+# Auto-generated hardware configuration — machine-specific
+hardware-configuration.nix
