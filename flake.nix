@@ -115,7 +115,7 @@
   # ===========================================================================
   # The 'outputs' function receives all the inputs declared above, plus 'self'
   # (this flake itself).  It must return an attribute set.  Here we produce
-  # exactly one thing: a NixOS system configuration named 'venus'.
+  # a NixOS system configuration named 'venus' and a standalone package.
   #
   # The destructuring pattern 'inputs@{ self, nixpkgs, home-manager, ... }'
   # means:
@@ -123,7 +123,17 @@
   #   - 'inputs' is the ENTIRE input set (so we can pass 'inherit inputs' to
   #     modules that need access to ALL inputs, like the packages module which
   #     uses 'inputs.hermes-agent')
-  outputs = inputs@{ self, nixpkgs, home-manager, ... }: {
+  outputs = inputs@{ self, nixpkgs, home-manager, ... }: let
+    system = "x86_64-linux";
+    pkgs = nixpkgs.legacyPackages.${system};
+  in {
+
+    # -------------------------------------------------------------------------
+    # packages.x86_64-linux — Standalone derivations
+    # -------------------------------------------------------------------------
+    # Expose ratspeak as a standalone package so you can test it with:
+    #   nix build .#ratspeak
+    packages.x86_64-linux.ratspeak = pkgs.callPackage ./pkgs/ratspeak { };
 
     # -------------------------------------------------------------------------
     # nixosConfigurations.venus — The NixOS system definition

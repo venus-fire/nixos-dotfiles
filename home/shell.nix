@@ -12,7 +12,7 @@
     autosuggestion.enable = true;
 
     # Source your existing custom config on top of Home Manager's generated .zshrc
-    initExtra = "source ~/.zshrc.custom";
+    initContent = "source ~/.zshrc.custom";
   };
 
   # Place your old .zshrc at ~/.zshrc.custom so Home Manager manages it
@@ -22,8 +22,10 @@
 
   programs.git = {
     enable = true;
-    userName = "venus-fire";
-    userEmail = "venus-fire@tutamail.com";
+    settings = {
+      user.name = "venus-fire";
+      user.email = "venus-fire@tutamail.com";
+    };
   };
 
   # Starship — fast, minimal shell prompt

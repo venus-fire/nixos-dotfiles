@@ -11,6 +11,9 @@ let
   hermes = inputs.hermes-agent.packages.x86_64-linux.default.override {
     extraDependencyGroups = [ "exa" ];
   };
+
+  # Ratspeak — pre-built AppImage from GitHub releases.
+  ratspeak = pkgs.callPackage ../pkgs/ratspeak { };
 in
 {
   nixpkgs.config.allowUnfree = true;
@@ -33,8 +36,22 @@ in
     udiskie                              # auto-mounter & CLI helpers for external drives
     brightnessctl                        # backlight control for brightness keys
     gh                                   # GitHub CLI
+    gamescope                            # micro-compositor for running Steam/games isolated from XWayland
     signal-desktop
     volantes-cursors                     # cursor theme
     prismlauncher
+    ncdu
+    xwayland-satellite
+    lmstudio
+    ratspeak
   ];
+  programs.steam = {
+    enable = true;
+    # Fix black screen with xwayland-satellite:
+    # CEF GPU-composited child windows race with xwayland-satellite's window creation.
+    # -system-composer changes how CEF renders without disabling HW acceleration.
+    package = pkgs.steam.override {
+      extraArgs = "-system-composer";
+    };
+  };
 }
