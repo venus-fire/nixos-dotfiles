@@ -3,8 +3,12 @@
 {
   imports = [ inputs.noctalia.homeModules.default ];
 
-  programs.noctalia-shell = {
+  # NOTE: The option was renamed upstream from `programs.noctalia-shell`
+  #       to `programs.noctalia`. systemd service is now built-in.
+  programs.noctalia = {
     enable = true;
+    systemd.enable = true;
+
     # NOTE: settings = { } means the module won't generate any config files.
     #       ~/.config/noctalia/ is a SYMLINK to ~/nixos-dotfiles/config/noctalia/
     #       (created manually: ln -s ~/nixos-dotfiles/config/noctalia ~/.config/noctalia)
@@ -14,20 +18,5 @@
     #
     #       On a fresh install, run that ln -s command after cloning.
     settings = { };
-  };
-
-  systemd.user.services.noctalia = {
-    Unit = {
-      Description = "Noctalia Shell";
-      After = [ "graphical-session.target" ];
-      PartOf = [ "graphical-session.target" ];
-    };
-    Service = {
-      ExecStart = "/etc/profiles/per-user/venus/bin/noctalia-shell";
-      Restart = "on-failure";
-    };
-    Install = {
-      WantedBy = [ "graphical-session.target" ];
-    };
   };
 }

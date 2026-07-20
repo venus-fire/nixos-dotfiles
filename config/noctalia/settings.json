@@ -33,7 +33,7 @@
         "preferredPlayer": "",
         "spectrumFrameRate": 30,
         "spectrumMirrored": true,
-        "visualizerType": "mirrored",
+        "visualizerType": "wave",
         "volumeFeedback": false,
         "volumeFeedbackSoundFile": "",
         "volumeOverdrive": true,
@@ -508,7 +508,7 @@
         "bluetoothRssiPollIntervalMs": 60000,
         "bluetoothRssiPollingEnabled": false,
         "disableDiscoverability": false,
-        "networkPanelView": "wifi",
+        "networkPanelView": "ethernet",
         "wifiDetailsViewMode": "grid"
     },
     "nightLight": {

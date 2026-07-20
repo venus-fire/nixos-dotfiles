@@ -3,7 +3,6 @@
 {
   networking.hostName = "venus";
   networking.networkmanager.enable = true;
-  networking.wireless.enable = true;
 
   # ---------------------------------------------------------------------------
   # WireGuard VPN — imported via NetworkManager (not managed declaratively)
