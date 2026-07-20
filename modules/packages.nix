@@ -11,9 +11,6 @@ let
   hermes = inputs.hermes-agent.packages.x86_64-linux.default.override {
     extraDependencyGroups = [ "exa" ];
   };
-
-  # Ratspeak — pre-built AppImage from GitHub releases.
-  ratspeak = pkgs.callPackage ../pkgs/ratspeak { };
 in
 {
   nixpkgs.config.allowUnfree = true;
@@ -43,7 +40,7 @@ in
     ncdu
     xwayland-satellite
     lmstudio
-    ratspeak
+    kdePackages.dolphin
   ];
   programs.steam = {
     enable = true;

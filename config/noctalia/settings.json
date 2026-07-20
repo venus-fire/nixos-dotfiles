@@ -36,7 +36,7 @@
         "visualizerType": "mirrored",
         "volumeFeedback": false,
         "volumeFeedbackSoundFile": "",
-        "volumeOverdrive": false,
+        "volumeOverdrive": true,
         "volumeStep": 5
     },
     "bar": {
@@ -669,7 +669,7 @@
         "activeTemplates": [
             {
                 "enabled": true,
-                "id": "fuzzel"
+                "id": "gtk"
             },
             {
                 "enabled": true,
@@ -677,15 +677,15 @@
             },
             {
                 "enabled": true,
-                "id": "qt"
-            },
-            {
-                "enabled": true,
                 "id": "starship"
             },
             {
                 "enabled": true,
-                "id": "gtk"
+                "id": "qt"
+            },
+            {
+                "enabled": true,
+                "id": "fuzzel"
             }
         ],
         "enableUserTheming": false

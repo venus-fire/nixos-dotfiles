@@ -123,17 +123,7 @@
   #   - 'inputs' is the ENTIRE input set (so we can pass 'inherit inputs' to
   #     modules that need access to ALL inputs, like the packages module which
   #     uses 'inputs.hermes-agent')
-  outputs = inputs@{ self, nixpkgs, home-manager, ... }: let
-    system = "x86_64-linux";
-    pkgs = nixpkgs.legacyPackages.${system};
-  in {
-
-    # -------------------------------------------------------------------------
-    # packages.x86_64-linux — Standalone derivations
-    # -------------------------------------------------------------------------
-    # Expose ratspeak as a standalone package so you can test it with:
-    #   nix build .#ratspeak
-    packages.x86_64-linux.ratspeak = pkgs.callPackage ./pkgs/ratspeak { };
+  outputs = inputs@{ self, nixpkgs, home-manager, ... }: {
 
     # -------------------------------------------------------------------------
     # nixosConfigurations.venus — The NixOS system definition

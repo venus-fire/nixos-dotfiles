@@ -12,7 +12,7 @@
 {
   imports = [
     # Auto-generated hardware scan (device UUIDs, filesystems, swap)
-    ./hardware-configuration.nix
+    /etc/nixos/hardware-configuration.nix
 
     # --- System modules ---
     ./modules/boot.nix                # bootloader & kernel

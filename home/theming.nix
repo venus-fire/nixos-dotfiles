@@ -10,7 +10,8 @@
 
   qt = {
     enable = true;
-    style.name = "adwaita-dark";
+    platformTheme.name = "kde";
+    style.name = "breeze-dark";
   };
 
   gtk = {
@@ -30,6 +31,9 @@
   # GTK cursor config below ensures consistency in GTK apps.
 
   home.packages = with pkgs; [ kdePackages.breeze ];
+
+  # KDE color scheme — source the actual Breeze Dark palette from the package.
+  xdg.configFile."kdeglobals".source = "${pkgs.kdePackages.breeze}/share/color-schemes/BreezeDark.colors";
 
   xdg.configFile."katerc".text = ''
     [UiSettings]
