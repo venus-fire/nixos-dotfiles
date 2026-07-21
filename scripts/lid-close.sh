@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
-# Check AC power status; if discharging (on battery), lock and suspend.
-# Otherwise just lock the screen.
+# Lock on lid close. On battery (discharging), also suspend.
+# Uses upower for cleaner power-state detection.
 set -euo pipefail
 
-# Determine if on battery: check all power supplies for discharging status
-if grep -q "Discharging" /sys/class/power_supply/*/status 2>/dev/null; then
-    noctalia msg session lock-and-suspend
-else
-    noctalia msg session lock
+battery=$(upower -e 2>/dev/null | grep -i bat || true)
+if [ -n "$battery" ]; then
+    state=$(upower -i "$battery" 2>/dev/null | grep "state" | awk '{print $2}')
+    if [ "$state" = "discharging" ]; then
+        exec noctalia msg session lock-and-suspend
+    fi
 fi
+exec noctalia msg session lock
