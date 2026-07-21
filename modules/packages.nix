@@ -41,9 +41,7 @@ in
     ncdu
     xwayland-satellite
     lmstudio
-    kdePackages.dolphin
-    kdePackages.kde-cli-tools           # kde-open5 for opening files from dolphin
-    kdePackages.kded                    # KDE daemon (required by KIO for file operations)
+    thunar                            # light file browser (no KDE deps)
   ];
 
   # Portal backend for file dialogs and opening files
