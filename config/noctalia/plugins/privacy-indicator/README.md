@@ -1,1 +1,1 @@
-/nix/store/75ks6y95dxxx5157rbchjdg1m4lnvf6g-home-manager-files/.config/noctalia/plugins/privacy-indicator/README.md
+/nix/store/555bsxz6k4si2gj5yicwhq0hiy2r46j1-home-manager-files/.config/noctalia/plugins/privacy-indicator/README.md

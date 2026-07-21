@@ -23,6 +23,7 @@ in
     kdePackages.kate
     kdePackages.kio-admin
     xdg-desktop-portal
+    xdg-utils                            # xdg-open for opening files in default apps
     ripgrep
     fzf
     fd
@@ -41,7 +42,15 @@ in
     xwayland-satellite
     lmstudio
     kdePackages.dolphin
+    kdePackages.kde-cli-tools           # kde-open5 for opening files from dolphin
   ];
+
+  # Portal backend for file dialogs and opening files
+  xdg.portal = {
+    enable = true;
+    extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
+  };
+
   # -system-composer fixes CEF black screen with xwayland-satellite
   programs.steam = {
     enable = true;
