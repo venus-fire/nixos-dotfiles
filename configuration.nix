@@ -25,6 +25,7 @@
     ./modules/services.nix            # syncthing, upower
     ./modules/hardware.nix            # bluetooth
     ./modules/nix-settings.nix        # flakes, nix-command
+    ./modules/power.nix               # lid close, power management
   ];
 
   # ---- State version ----

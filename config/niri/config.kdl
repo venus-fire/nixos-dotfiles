@@ -6,7 +6,7 @@
 
 switch-events {
     lid-close {
-        spawn "noctalia-shell" "ipc" "call" "lockScreen" "lock"
+        spawn "/home/venus/nixos-dotfiles/scripts/lid-close.sh"
     }
 }
 
