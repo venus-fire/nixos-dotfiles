@@ -9,5 +9,6 @@
     ./shell.nix
     ./noctalia.nix
     ./theming.nix
+    ./symlinks.nix          # managed symlinks for niri, noctalia config
   ];
 }

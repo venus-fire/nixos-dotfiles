@@ -10,13 +10,11 @@
     systemd.enable = true;
 
     # NOTE: settings = { } means the module won't generate any config files.
-    #       ~/.config/noctalia/ is a SYMLINK to ~/nixos-dotfiles/config/noctalia/
-    #       (created manually: ln -s ~/nixos-dotfiles/config/noctalia ~/.config/noctalia)
+    #       ~/.config/noctalia/ is a SYMLINK managed by home-manager
+    #       via ./symlinks.nix (xdg.configFile).
     #
     #       This means GUI changes write directly into the dotfiles repo.
     #       To checkpoint: cd ~/nixos-dotfiles && git commit -am "update noctalia"
-    #
-    #       On a fresh install, run that ln -s command after cloning.
     settings = { };
   };
 }
