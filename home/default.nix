@@ -10,5 +10,6 @@
     ./noctalia.nix
     ./theming.nix
     ./symlinks.nix          # managed symlinks for niri, noctalia config
+    ./kde-services.nix      # kded for dolphin/kio file operations
   ];
 }

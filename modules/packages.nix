@@ -43,6 +43,7 @@ in
     lmstudio
     kdePackages.dolphin
     kdePackages.kde-cli-tools           # kde-open5 for opening files from dolphin
+    kdePackages.kded                    # KDE daemon (required by KIO for file operations)
   ];
 
   # Portal backend for file dialogs and opening files
