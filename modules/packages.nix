@@ -48,6 +48,7 @@ in
     zip
     ffmpeg
     lid-close
+    wl-clipboard-rs
   ];
 
   # Portal backend for opening files (yazi, xdg-open)
