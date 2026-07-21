@@ -1,1 +1,1 @@
-/nix/store/n0kd3y2n4vgd4vkjr98f8yhglsa3m3wp-home-manager-files/.config/noctalia/plugins/privacy-indicator/Panel.qml
+/nix/store/drp8px0fxc4chc5fdf5pj84dbfshz9vh-home-manager-files/.config/noctalia/plugins/privacy-indicator/Panel.qml

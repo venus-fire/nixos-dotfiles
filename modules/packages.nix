@@ -43,6 +43,12 @@ in
     lmstudio
   ];
 
+  # Portal backend for opening files (yazi, xdg-open)
+  xdg.portal = {
+    enable = true;
+    extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
+  };
+
   # -system-composer fixes CEF black screen with xwayland-satellite
   programs.steam = {
     enable = true;
