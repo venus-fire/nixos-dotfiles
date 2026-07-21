@@ -41,14 +41,7 @@ in
     ncdu
     xwayland-satellite
     lmstudio
-    thunar                            # light file browser (no KDE deps)
   ];
-
-  # Portal backend for file dialogs and opening files
-  xdg.portal = {
-    enable = true;
-    extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
-  };
 
   # -system-composer fixes CEF black screen with xwayland-satellite
   programs.steam = {

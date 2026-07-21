@@ -10,6 +10,5 @@
     ./noctalia.nix
     ./theming.nix
     ./symlinks.nix          # managed symlinks for niri, noctalia config
-    ./gtk.nix               # gtk theme settings (Adwaita-dark + noctalia css overlay)
   ];
 }
