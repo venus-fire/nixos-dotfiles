@@ -2,7 +2,7 @@
 # ZSH CUSTOM CONFIG — sourced on top of Home Manager's generated .zshrc
 # =============================================================================
 # Things managed by Nix/Home Manager have been removed from this file.
-# See ~/nixos-dotfiles/home/shell.nix for the declarative zsh config.
+# See ~/Documents/nixos-dotfiles/home/shell.nix for the declarative zsh config.
 # =============================================================================
 
 # -----------------------------------------------------------------------------

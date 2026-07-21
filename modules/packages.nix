@@ -1,6 +1,9 @@
 { pkgs, inputs, ... }:
 
 let
+  # lid-close.sh — system script for handling laptop lid-close events
+  lid-close = pkgs.writeShellScriptBin "lid-close" (builtins.readFile ../scripts/lid-close.sh);
+
   # Hermes Agent with Exa web search SDK baked in at build time.
   # The Hermes flake's package supports `override` with extraDependencyGroups
   # to add optional dependency groups (defined in pyproject.toml) that would
@@ -41,6 +44,10 @@ in
     ncdu
     xwayland-satellite
     lmstudio
+    kitty
+    zip
+    ffmpeg
+    lid-close
   ];
 
   # Portal backend for opening files (yazi, xdg-open)

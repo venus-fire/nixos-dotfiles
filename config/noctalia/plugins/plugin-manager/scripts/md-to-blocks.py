@@ -1,1 +1,1 @@
-/nix/store/drp8px0fxc4chc5fdf5pj84dbfshz9vh-home-manager-files/.config/noctalia/plugins/plugin-manager/scripts/md-to-blocks.py
+/nix/store/nk0fdyv4h4ahwhdq5slf97vfwayhrbbz-home-manager-files/.config/noctalia/plugins/plugin-manager/scripts/md-to-blocks.py
