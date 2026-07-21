@@ -4,8 +4,12 @@
   programs.niri.enable = true;
   services.displayManager.ly.enable = true;
 
-  # Cursor theme — set in niri config.kdl's cursor block (handles both the cursor
-  # and XCURSOR_THEME/XCURSOR_SIZE env vars for child processes).
+  # Propagate cursor theme so xwayland-satellite and other non-niri
+  # processes also pick up the custom cursor
+  environment.sessionVariables = {
+    XCURSOR_THEME = "volantes_cursors";
+    XCURSOR_SIZE = "24";
+  };
 
   # ---------------------------------------------------------------------------
   # niri config — symlinked via home-manager (./symlinks.nix)

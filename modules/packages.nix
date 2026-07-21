@@ -42,7 +42,11 @@ in
     lmstudio
     kdePackages.dolphin
   ];
+  # -system-composer fixes CEF black screen with xwayland-satellite
   programs.steam = {
     enable = true;
+    package = pkgs.steam.override {
+      extraArgs = "-system-composer";
+    };
   };
 }

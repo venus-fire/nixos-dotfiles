@@ -1,15 +1,1 @@
-import Quickshell
-import qs.Widgets
-
-NIconButtonHot {
-  property ShellScreen screen
-  property var pluginApi: null
-
-  icon: "puzzle"
-  tooltipText: pluginApi?.tr("widget.tooltip")
-  onClicked: {
-    if (pluginApi) {
-      pluginApi.togglePanel(screen, this);
-    }
-  }
-}
+/nix/store/75ks6y95dxxx5157rbchjdg1m4lnvf6g-home-manager-files/.config/noctalia/plugins/plugin-manager/ControlCenterWidget.qml
