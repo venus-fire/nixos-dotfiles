@@ -44,11 +44,5 @@ in
   ];
   programs.steam = {
     enable = true;
-    # Fix black screen with xwayland-satellite:
-    # CEF GPU-composited child windows race with xwayland-satellite's window creation.
-    # -system-composer changes how CEF renders without disabling HW acceleration.
-    package = pkgs.steam.override {
-      extraArgs = "-system-composer";
-    };
   };
 }
