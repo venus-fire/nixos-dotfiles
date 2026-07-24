@@ -1,4 +1,4 @@
-{ pkgs, inputs, ... }:
+{ pkgs, inputs, pkgs-unstable, ... }:
 
 let
   # lid-close.sh — system script for handling laptop lid-close events
@@ -49,6 +49,11 @@ in
     ffmpeg
     lid-close
     wl-clipboard-rs
+    speedcrunch
+    nicotine-plus
+    strawberry
+    pkgs-unstable.handy
+    wtype
   ];
 
   # Portal backend for opening files (yazi, xdg-open)

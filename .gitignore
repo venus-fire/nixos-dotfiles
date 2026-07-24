@@ -20,3 +20,4 @@ result-*
 
 # Auto-generated hardware configuration — machine-specific
 hardware-configuration.nix
+.kate-swp

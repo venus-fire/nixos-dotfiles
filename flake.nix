@@ -106,6 +106,13 @@
       url = "github:NousResearch/hermes-agent";
     };
 
+    # -------------------------------------------------------------------------
+    # nixpkgs-unstable — bleeding-edge nixpkgs for individual package overrides
+    # -------------------------------------------------------------------------
+    # Pinned separately so we can pull select packages (like handy) from
+    # unstable without moving the entire system off nixos-26.05.
+    nixpkgs-unstable.url = "nixpkgs/nixos-unstable";
+
   };  # <-- end of inputs
 
 
@@ -117,13 +124,13 @@
   # (this flake itself).  It must return an attribute set.  Here we produce
   # a NixOS system configuration named 'venus' and a standalone package.
   #
-  # The destructuring pattern 'inputs@{ self, nixpkgs, home-manager, ... }'
+  # The destructuring pattern 'inputs@{ self, nixpkgs, nixpkgs-unstable, home-manager, ... }'
   # means:
   #   - 'self' and 'nixpkgs' and 'home-manager' are bound as named variables
   #   - 'inputs' is the ENTIRE input set (so we can pass 'inherit inputs' to
   #     modules that need access to ALL inputs, like the packages module which
   #     uses 'inputs.hermes-agent')
-  outputs = inputs@{ self, nixpkgs, home-manager, ... }: {
+  outputs = inputs@{ self, nixpkgs, nixpkgs-unstable, home-manager, ... }: {
 
     # -------------------------------------------------------------------------
     # nixosConfigurations.venus — The NixOS system definition
@@ -142,8 +149,16 @@
       # Without this, modules (like ./modules/packages.nix) would have no way
       # to access 'inputs.hermes-agent' or 'inputs.noctalia'.  NixOS modules
       # normally only receive { config, pkgs, lib, ... }.  We use specialArgs
-      # to additionally inject the full input set under the name 'inputs'.
-      specialArgs = { inherit inputs; };
+      # to additionally inject the full input set under the name 'inputs' and
+      # a second nixpkgs instance under 'pkgs-unstable' for packages only
+      # available in nixos-unstable (e.g. handy).
+      specialArgs = {
+        inherit inputs;
+        pkgs-unstable = import nixpkgs-unstable {
+          system = "x86_64-linux";
+          config.allowUnfree = true;
+        };
+      };
 
       # ---- Module list ----
       # Modules are Nix files or attribute sets that get merged together.
