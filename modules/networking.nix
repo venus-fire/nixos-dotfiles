@@ -3,6 +3,8 @@
 {
   networking.hostName = "venus";
   networking.networkmanager.enable = true;
+  networking.firewall.allowedTCPPorts = [ 11185 ];
+  # networking.firewall.allowedUDPPorts = [ 11185 ];  # uncomment if UDP needed
 
   # ---------------------------------------------------------------------------
   # WireGuard VPN — imported via NetworkManager (not managed declaratively)
