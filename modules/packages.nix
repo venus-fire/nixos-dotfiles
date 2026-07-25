@@ -54,6 +54,7 @@ in
     strawberry
     pkgs-unstable.handy
     wtype
+    pkgs-unstable.fetch
   ];
 
   # Portal backend for opening files (yazi, xdg-open)

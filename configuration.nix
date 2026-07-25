@@ -23,10 +23,16 @@
     ./modules/security.nix            # polkit
     ./modules/display.nix             # niri compositor & ly display manager
     ./modules/services.nix            # syncthing, upower
+    ./modules/freenet.nix             # freenet p2p node
     ./modules/hardware.nix            # bluetooth
     ./modules/nix-settings.nix        # flakes, nix-command
     ./modules/power.nix               # lid close, power management
   ];
+
+  # ---- Enable Freenet P2P node (Rust freenet-core) ----
+  # Runs the freenet-core daemon as a systemd service on port 31337/udp (P2P)
+  # and 7509/tcp (dashboard/API). Dashboard at http://127.0.0.1:7509/.
+  services.freenet-core.enable = true;
 
   # ---- State version ----
   # DO NOT change after first install. Controls defaults for stateful data.

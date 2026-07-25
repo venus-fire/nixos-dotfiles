@@ -113,6 +113,21 @@
     # unstable without moving the entire system off nixos-26.05.
     nixpkgs-unstable.url = "nixpkgs/nixos-unstable";
 
+    # -------------------------------------------------------------------------
+    # freenet-core — Decentralized P2P platform (Rust rewrite)
+    # -------------------------------------------------------------------------
+    # Rust-based peer-to-peer runtime for decentralized applications (River chat,
+    # Atlas sites, Raven microblogging, etc.). Provides the `freenet` node binary
+    # that runs the network daemon and serves the local dashboard.
+    freenet-core = {
+      url = "github:freenet/freenet-core";
+
+      # Use our nixpkgs (nixos-26.05) so the Rust toolchain and libraries are
+      # compatible with the rest of the system. Without this, freenet-core would
+      # pull nixpkgs-unstable (its own input), which could cause build mismatches.
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
   };  # <-- end of inputs
 
 
