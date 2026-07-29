@@ -55,6 +55,7 @@ in
     pkgs-unstable.handy
     wtype
     pkgs-unstable.fetch
+    btop
   ];
 
   # Portal backend for opening files (yazi, xdg-open)

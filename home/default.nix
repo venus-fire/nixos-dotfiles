@@ -10,5 +10,6 @@
     ./noctalia.nix
     ./theming.nix
     ./symlinks.nix          # managed symlinks for niri, noctalia config
+    ./qbittorrent.nix        # qBittorrent with I2P-optimised settings
   ];
 }
