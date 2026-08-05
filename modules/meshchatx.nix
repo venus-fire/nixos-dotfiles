@@ -44,6 +44,52 @@ let
       ${venvPath}/bin/pip install --quiet ${wheelUrl}
     fi
   '';
+
+  # Wait until every non-loopback interface with a link-local IPv6 has a
+  # *bindable* fe80 address before starting. RNS AutoInterface panics (→
+  # "Network degraded", app stuck at stage=failed forever) if an interface
+  # adopted at discovery can't be bound during final_init — which happens when
+  # the service starts while WiFi is still settling right after a
+  # NetworkManager restart. Soft timeout: if the link never becomes ready
+  # (e.g. LoRa-only / offline), start anyway — AutoInterface with no bindable
+  # interfaces only warns, and the TCP hub interface still runs.
+  waitNetwork = pkgs.writeShellScript "meshchatx-wait-network" ''
+    probe() {
+      ${pkgs.python312}/bin/python - <<'PYEOF'
+import socket, sys
+found = False
+with open("/proc/net/if_inet6") as fh:
+    for line in fh:
+        p = line.split()                      # addr ifindex plen scope flags name
+        name = p[5]
+        if name == "lo":
+            continue
+        ip = ":".join(p[0][i:i+4] for i in range(0, 32, 4))
+        if not ip.startswith("fe80:"):
+            continue
+        found = True
+        idx = int(p[1], 16)
+        s = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+        try:
+            s.bind(socket.getaddrinfo(f"{ip}%{idx}", 0,
+                      socket.AF_INET6, socket.SOCK_DGRAM)[0][4])
+            s.close()
+        except OSError:
+            sys.exit(1)                        # present but not bindable yet
+sys.exit(0 if found else 1)                    # nothing yet: keep waiting
+PYEOF
+    }
+
+    for i in $(seq 1 15); do             # ~30s window, 2s between probes
+      if probe; then
+        echo "meshchatx-wait-network: link-local interfaces ready (probe $i)"
+        exit 0
+      fi
+      sleep 2
+    done
+    echo "meshchatx-wait-network: WARNING no bindable fe80 after 30s, starting anyway" >&2
+    exit 0
+  '';
 in
 {
   options.services.meshchatx = {
@@ -97,6 +143,7 @@ in
         User = cfg.user;
         ExecStartPre = [
           "${bootstrap}"
+          "${waitNetwork}"
         ];
         ExecStart = lib.concatStringsSep " " ([
           "${venvPath}/bin/meshchat"
