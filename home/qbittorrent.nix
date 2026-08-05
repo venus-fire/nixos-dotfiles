@@ -13,7 +13,7 @@
 # seeds defaults for a first launch.
 # =============================================================================
 
-{ config, pkgs, ... }:
+{ config, lib, pkgs, ... }:
 
 let
   qbtConfig = pkgs.writeText "qBittorrent.conf" ''
@@ -48,7 +48,15 @@ in
 {
   home.packages = with pkgs; [ qbittorrent ];
 
-  # Seed the initial config. qBittorrent rewrites this file on every shutdown,
-  # so this only takes effect on first launch (file doesn't exist yet).
-  home.file.".config/qBittorrent/qBittorrent.conf".source = qbtConfig;
+  # Seed the initial config on first launch only. qBittorrent rewrites this
+  # file on every shutdown, so home-manager must not continuously manage it:
+  # each activation would try to back up the diverged file into the single-use
+  # qBittorrent.conf.backup slot and abort ("would be clobbered"). This hook
+  # copies the seed only when the file doesn't exist yet.
+  home.activation.seedQBittorrent = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    if [ ! -e "$HOME/.config/qBittorrent/qBittorrent.conf" ]; then
+      mkdir -p "$HOME/.config/qBittorrent"
+      cp ${qbtConfig} "$HOME/.config/qBittorrent/qBittorrent.conf"
+    fi
+  '';
 }
