@@ -56,6 +56,7 @@ in
     wtype
     pkgs-unstable.fetch
     btop
+    mpv
   ];
 
   # Portal backend for opening files (yazi, xdg-open)

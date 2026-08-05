@@ -12,4 +12,7 @@
 
   # udisks2 — D-Bus service for automounting removable drives
   services.udisks2.enable = true;
+
+  services.tailscale.enable = true;
+
 }
