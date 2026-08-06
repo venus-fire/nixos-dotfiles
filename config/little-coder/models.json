@@ -9,7 +9,7 @@
         {
           "id": "bonsai-8b-q2",
           "name": "PrismML Ternary Bonsai 8B Q2_0 (g64, mainline llama.cpp)",
-          "reasoning": true,
+          "reasoning": false,
           "input": ["text"],
           "contextWindow": 65536,
           "maxTokens": 4096,
