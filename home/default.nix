@@ -11,5 +11,6 @@
     ./theming.nix
     ./symlinks.nix          # managed symlinks for niri, noctalia config
     ./qbittorrent.nix        # qBittorrent with I2P-optimised settings
+    ./llm.nix                # little-coder + PrismML llama.cpp fork (Vulkan)
   ];
 }

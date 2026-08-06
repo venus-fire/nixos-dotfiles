@@ -128,6 +128,24 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # -------------------------------------------------------------------------
+    # llama-cpp (PrismML fork) — llama.cpp with ternary tensor support
+    # -------------------------------------------------------------------------
+    # The `prism` branch of PrismML's llama.cpp fork adds the ternary GGUF
+    # tensor type required to run prism-ml/Ternary-Bonsai-8B-gguf (mainline
+    # llama.cpp errors on it). Exposed in home.packages directly from the
+    # flake input (inputs.llama-cpp.packages.${system}.default — CPU; the
+    # fork's Vulkan build crashes on this laptop's Intel iGPU, see
+    # home/llm.nix); the source is not vendored into this repo.
+    #
+    # Uses OUR nixpkgs (nixos-26.05) rather than the fork's own nixos-unstable
+    # input so everything compiles against the same package set.
+    llama-cpp = {
+      url = "github:PrismML-Eng/llama.cpp/prism";
+
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
   };  # <-- end of inputs
 
 
@@ -182,6 +200,10 @@
       # the module system (declarative, not imperative).
       modules = [
 
+        # Apply our overlay so pkgs.little-coder resolves everywhere,
+        # including home-manager (useGlobalPkgs = true).
+        { nixpkgs.overlays = [ self.overlays.default ]; }
+
         # Our main system-level configuration file.  It imports all the
         # individual concern-based modules from ./modules/ for readability.
         ./configuration.nix
@@ -235,5 +257,15 @@
         }
       ];  # <-- end of modules list
     };  # <-- end of nixosConfigurations.venus
+
+    # -------------------------------------------------------------------------
+    # overlays.default — packages built from this flake
+    # -------------------------------------------------------------------------
+    # little-coder (buildNpmPackage, pinned to v1.14.0) becomes pkgs.little-coder
+    # so it can go in home.packages like everything else in the config.
+    # Enabled via the inline overlay module in the module list above.
+    overlays.default = (final: prev: {
+      little-coder = final.callPackage ./pkgs/little-coder.nix { };
+    });
   };  # <-- end of outputs
 }  # <-- end of the flake
