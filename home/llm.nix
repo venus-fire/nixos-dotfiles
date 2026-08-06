@@ -17,8 +17,12 @@
 
   # pi requires SOME value for local-provider API keys even though the local
   # llama-server ignores it (little-coder README: export LLAMACPP_API_KEY=noop).
+  # LITTLE_CODER_PERMISSION_MODE=accept-all disables the built-in whitelist
+  # gate; safety net is the denylist user extension at
+  # ~/.config/little-coder/extensions/denylist.mjs (rm, sudo, dd, mkfs, ...).
   home.sessionVariables = {
     LLAMACPP_API_KEY = "noop";
+    LITTLE_CODER_PERMISSION_MODE = "accept-all";
   };
 
   # Provider/model override. Provider keys fully replace the shipped

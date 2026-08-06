@@ -57,6 +57,7 @@ in
     pkgs-unstable.fetch
     btop
     mpv
+    nmap
   ];
 
   # Portal backend for opening files (yazi, xdg-open)
