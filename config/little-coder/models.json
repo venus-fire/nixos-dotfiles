@@ -8,7 +8,7 @@
       "models": [
         {
           "id": "bonsai-8b-q2",
-          "name": "PrismML Ternary Bonsai 8B Q2_0 (g128, local llama.cpp)",
+          "name": "PrismML Ternary Bonsai 8B Q2_0 (g64, mainline llama.cpp)",
           "reasoning": true,
           "input": ["text"],
           "contextWindow": 65536,

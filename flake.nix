@@ -128,24 +128,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # -------------------------------------------------------------------------
-    # llama-cpp (PrismML fork) — llama.cpp with ternary tensor support
-    # -------------------------------------------------------------------------
-    # The `prism` branch of PrismML's llama.cpp fork adds the ternary GGUF
-    # tensor type required to run prism-ml/Ternary-Bonsai-8B-gguf (mainline
-    # llama.cpp errors on it). Exposed in home.packages directly from the
-    # flake input (inputs.llama-cpp.packages.${system}.default — CPU; the
-    # fork's Vulkan build crashes on this laptop's Intel iGPU, see
-    # home/llm.nix); the source is not vendored into this repo.
-    #
-    # Uses OUR nixpkgs (nixos-26.05) rather than the fork's own nixos-unstable
-    # input so everything compiles against the same package set.
-    llama-cpp = {
-      url = "github:PrismML-Eng/llama.cpp/prism";
-
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
   };  # <-- end of inputs
 
 
@@ -163,7 +145,17 @@
   #   - 'inputs' is the ENTIRE input set (so we can pass 'inherit inputs' to
   #     modules that need access to ALL inputs, like the packages module which
   #     uses 'inputs.hermes-agent')
-  outputs = inputs@{ self, nixpkgs, nixpkgs-unstable, home-manager, ... }: {
+  outputs = inputs@{ self, nixpkgs, nixpkgs-unstable, home-manager, ... }:
+
+  # Single nixpkgs-unstable instance shared by NixOS modules (specialArgs) and
+  # home-manager modules (extraSpecialArgs), so both see the same pkgs.
+  let
+    pkgs-unstable = import nixpkgs-unstable {
+      system = "x86_64-linux";
+      config.allowUnfree = true;
+    };
+  in
+  {
 
     # -------------------------------------------------------------------------
     # nixosConfigurations.venus — The NixOS system definition
@@ -186,11 +178,7 @@
       # a second nixpkgs instance under 'pkgs-unstable' for packages only
       # available in nixos-unstable (e.g. handy).
       specialArgs = {
-        inherit inputs;
-        pkgs-unstable = import nixpkgs-unstable {
-          system = "x86_64-linux";
-          config.allowUnfree = true;
-        };
+        inherit inputs pkgs-unstable;
       };
 
       # ---- Module list ----
@@ -251,7 +239,7 @@
             # into home-manager modules so they can reference, e.g.,
             # 'inputs.noctalia' (which home/noctalia.nix needs to import the
             # noctalia home-manager module).
-            extraSpecialArgs = { inherit inputs; };
+            extraSpecialArgs = { inherit inputs pkgs-unstable; };
 
           };
         }
