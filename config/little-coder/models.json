@@ -1,5 +1,5 @@
 {
-  "default": "llamacpp/bonsai-8b-q2",
+  "default": "llamacpp/qwen3-30b-a3b",
   "providers": {
     "llamacpp": {
       "api": "openai-completions",
@@ -7,13 +7,13 @@
       "apiKey": "LLAMACPP_API_KEY",
       "models": [
         {
-          "id": "bonsai-8b-q2",
-          "name": "PrismML Ternary Bonsai 8B Q2_0 (g64, mainline llama.cpp)",
+          "id": "qwen3-30b-a3b",
+          "name": "Qwen3 30B-A3B Instruct Q3_K_M (MoE, streamed from disk)",
           "reasoning": false,
           "input": ["text"],
-          "contextWindow": 65536,
+          "contextWindow": 131072,
           "maxTokens": 4096,
-          "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 }
+          "kind": "chat"
         }
       ]
     }

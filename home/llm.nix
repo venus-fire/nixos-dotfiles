@@ -2,12 +2,14 @@
 
 {
   # little-coder (from our overlay) + mainline llama.cpp with the Vulkan
-  # backend, pulled from nixpkgs-unstable (the stable 26.05 llama-cpp predates
-  # the ternary Q2_0 merge upstream; the PrismML fork's own Vulkan kernels
-  # crash with vk::DeviceLostError on this laptop's Intel Iris Plus iGPU).
-  # Mainline merged ternary support (CPU/Metal/Vulkan/CUDA) in July 2026, and
-  # its Vulkan kernels are the mature, upstream-reviewed ones. The ternary
-  # model file must be the g64 variant (group size 64) — the mainline format.
+  # backend, pulled from nixpkgs-unstable (b10133). The ternary Bonsai model
+  # was abandoned: its Q2_0 Vulkan kernels (new upstream code) produced
+  # garbage on this laptop's Intel Iris Plus iGPU regardless of flags.
+  # Standard quant types (Q3_K_M etc.) use the mature, well-tested kernels.
+  #
+  # Model: Qwen3-30B-A3B (MoE, ~3B active params) Q3_K_M — llama.cpp mmaps
+  # the GGUF and streams only the active experts from disk, so a 14.8G file
+  # runs fine on this laptop's ~11.6G RAM.
   home.packages = [
     pkgs.little-coder
     pkgs-unstable.llama-cpp-vulkan
@@ -24,26 +26,24 @@
   # little-coder's default port 8888.
   xdg.configFile."little-coder/models.json".source = ../config/little-coder/models.json;
 
-  # Serve the Ternary Bonsai 8B (Q2_0 g64) model on 127.0.0.1:8888 with the
-  # Vulkan backend (all layers offloaded). User service so it has GPU access
-  # and the model path under /home/venus.
-  #
-  # GGML_VK_DISABLE_F16=1 is REQUIRED on this laptop: the ternary Q2_0 fp16
-  # decode kernels hang the Intel Iris Plus (Ice Lake) iGPU with
-  # vk::DeviceLostError (reproduced on both the PrismML fork and mainline
-  # llama.cpp; prefill works, decode dies). The fp32 kernels are stable.
+  # Serve the Qwen3-30B-A3B MoE model on 127.0.0.1:8888 with the Vulkan
+  # backend. Conservative flags learned from the ternary saga:
+  #   - -np 1: single slot (multi-slot decode triggered device-lost crashes)
+  #   - --flash-attn off: flash-attn on this old iGPU was a crash suspect
+  #   - --cache-ram 2048: 2G prompt-cache budget — reuse for repeated prompts
+  #     without the ~8G default reservation that caused memory pressure
+  # User service so it has GPU access and the model path under /home/venus.
   systemd.user.services.llama-server = {
     Unit = {
-      Description = "llama-server (mainline llama.cpp, Vulkan) — Ternary Bonsai 8B Q2_0 g64";
+      Description = "llama-server (mainline llama.cpp, Vulkan) — Qwen3-30B-A3B Q3_K_M";
       After = [ "graphical-session.target" ];
     };
     Service = {
       ExecStart = lib.concatStringsSep " " [
         "${pkgs-unstable.llama-cpp-vulkan}/bin/llama-server"
-        "-m /home/venus/models/Ternary-Bonsai-8B-Q2_0_g64.gguf"
-        "--host 127.0.0.1 --port 8888 -c 16384 --jinja -ngl 99"
+        "-m /home/venus/models/Qwen3-30B-A3B-Instruct-2507.Q3_K_M.gguf"
+        "--host 127.0.0.1 --port 8888 -c 16384 --jinja -ngl 99 --cpu-moe -np 1 --flash-attn off --cache-ram 2048"
       ];
-      Environment = [ "GGML_VK_DISABLE_F16=1" ];
       Restart = "on-failure";
       RestartSec = "5";
     };
