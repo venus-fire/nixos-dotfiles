@@ -33,9 +33,11 @@
   # Serve the Qwen3-30B-A3B MoE model on 127.0.0.1:8888 with the Vulkan
   # backend. Conservative flags learned from the ternary saga:
   #   - -np 1: single slot (multi-slot decode triggered device-lost crashes)
-  #   - --flash-attn off: flash-attn on this old iGPU was a crash suspect
+  #   - --flash-attn on: verified stable for a full little-coder session on the
+  #     MoE model (the ternary-era crash suspicion didn't apply to Q3_K_M)
   #   - --cache-ram 2048: 2G prompt-cache budget — reuse for repeated prompts
   #     without the ~8G default reservation that caused memory pressure
+  #   - -c 32768: 32K context (KV cache lives in iGPU shared memory; 64K OOMs)
   # User service so it has GPU access and the model path under /home/venus.
   systemd.user.services.llama-server = {
     Unit = {
@@ -46,7 +48,7 @@
       ExecStart = lib.concatStringsSep " " [
         "${pkgs-unstable.llama-cpp-vulkan}/bin/llama-server"
         "-m /home/venus/models/Qwen3-30B-A3B-Instruct-2507.Q3_K_M.gguf"
-        "--host 127.0.0.1 --port 8888 -c 16384 --jinja -ngl 99 --cpu-moe -np 1 --flash-attn off --cache-ram 2048"
+        "--host 127.0.0.1 --port 8888 -c 32768 --jinja -ngl 99 --cpu-moe -np 1 --flash-attn on --cache-ram 2048"
       ];
       Restart = "on-failure";
       RestartSec = "5";

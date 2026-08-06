@@ -11,7 +11,7 @@
           "name": "Qwen3 30B-A3B Instruct Q3_K_M (MoE, streamed from disk)",
           "reasoning": false,
           "input": ["text"],
-          "contextWindow": 131072,
+          "contextWindow": 32768,
           "maxTokens": 4096,
           "kind": "chat"
         }
