@@ -25,7 +25,16 @@
 #   sudo nixos-rebuild switch --flake .#venus --impure
 set -uo pipefail
 
-REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Repo root: BASH_SOURCE works when run from the checkout (the zsh alias in
+# home/shell.nix points there). FLAKE_UPDATE_REPO overrides it (needed if the
+# script is ever installed into the nix store, where BASH_SOURCE won't point
+# at the repo).
+REPO="${FLAKE_UPDATE_REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+if [ ! -f "$REPO/pkgs/prime-agent.nix" ]; then
+  echo "error: dotfiles repo not found (no pkgs/prime-agent.nix under $REPO)" >&2
+  echo "hint: run from the checkout, or set FLAKE_UPDATE_REPO to the repo path" >&2
+  exit 1
+fi
 cd "$REPO"
 
 PKG_NIX="pkgs/prime-agent.nix"

@@ -5,6 +5,8 @@
     enable = true;
     shellAliases = {
       btw = "echo i use nixos, btw";
+      # flake update + prime-agent bump — see scripts/flake-update.sh
+      flake-update = "~/Documents/nixos-dotfiles/scripts/flake-update.sh";
     };
 
     # Zsh plugins — enabled declaratively, Home Manager handles the sourcing
