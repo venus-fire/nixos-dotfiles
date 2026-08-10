@@ -254,6 +254,12 @@
     # Enabled via the inline overlay module in the module list above.
     overlays.default = (final: prev: {
       little-coder = final.callPackage ./pkgs/little-coder.nix { };
+
+      # prime-agent — RLM coding agent CLI. Package = release tarball
+      # (dist/ prebuilt). prime-agent-kernel = the Python kernel env the agent
+      # runs on (ipykernel + bundled prime-agent-runtime + bundled skills).
+      prime-agent = final.callPackage ./pkgs/prime-agent.nix { };
+      prime-agent-kernel = final.callPackage ./pkgs/prime-agent-kernel.nix { };
     });
   };  # <-- end of outputs
 }  # <-- end of the flake
