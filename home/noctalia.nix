@@ -9,12 +9,18 @@
     enable = true;
     systemd.enable = true;
 
-    # NOTE: settings = { } means the module won't generate any config files.
-    #       ~/.config/noctalia/ is a SYMLINK managed by home-manager
-    #       via ./symlinks.nix (xdg.configFile).
+    # v5 config model:
+    #   - settings = { } below means the module generates NO config.toml;
+    #     noctalia runs on its built-in defaults plus runtime state.
+    #   - Runtime settings (Settings UI) are written by noctalia itself to
+    #     ~/.local/state/noctalia/settings.toml — a plain writable file that
+    #     survives rebuilds, so GUI changes are NOT stored in this repo.
+    #   - Plugins are managed with `noctalia msg plugins` (v5 .luau format,
+    #     plugin_api 3) and live under ~/.local/state/noctalia/plugins/.
     #
-    #       This means GUI changes write directly into the dotfiles repo.
-    #       To checkpoint: cd ~/nixos-dotfiles && git commit -am "update noctalia"
+    # To make settings reproducible, copy values from settings.toml into the
+    # `settings` attrset below; the module validates them at build time and
+    # generates ~/.config/noctalia/config.toml (still overridable at runtime).
     settings = { };
   };
 }

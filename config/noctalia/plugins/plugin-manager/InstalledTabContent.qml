@@ -1,1 +1,0 @@
-/nix/store/nk0fdyv4h4ahwhdq5slf97vfwayhrbbz-home-manager-files/.config/noctalia/plugins/plugin-manager/InstalledTabContent.qml
