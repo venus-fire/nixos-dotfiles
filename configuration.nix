@@ -21,6 +21,7 @@
     ./modules/users.nix               # user accounts & groups
     ./modules/packages.nix            # system-wide packages
     ./modules/security.nix            # polkit
+    ./modules/kali-tools.nix          # Kali top-100 CLI security tools
     ./modules/display.nix             # niri compositor & ly display manager
     ./modules/services.nix            # syncthing, upower
     ./modules/freenet.nix             # freenet p2p node
