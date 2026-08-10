@@ -47,7 +47,7 @@ buildNpmPackage rec {
 
   # Hash of the npm dependency tree (from prefetch-npm-deps against the
   # vendored lockfile — see the bump instructions at the top).
-  npmDepsHash = "sha256-ObqOs6GZjk4s/rN7iRmikUYSsrvelqaC1e16soUQqpw=";
+  npmDepsHash = "sha256-chC7YTkSFYLJ4369xylC0JVVcGZ8mD22V4p7xvpzAmY=";
 
   postPatch = ''
     cp ${./prime-agent/package-lock.json} package-lock.json
