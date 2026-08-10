@@ -15,12 +15,30 @@
 #   - switch        — activate the new config NOW (not just build it)
 #   --flake .#venus — use the flake in the current dir (.), target host 'venus'
 #
+#   NOTE: no --impure flag needed — this machine's hardware config is a flake
+#   input (see the 'hardware-config' input below), not an absolute-path import.
+#
 # DRY RUN (build only, don't activate — safe to test):
 #   nixos-rebuild build --flake .#venus
 #   Then check: ./result
 #
-# UPDATE THE FLAKE.LOCK (refresh all input versions):
+# NEW MACHINE (first rebuild after a fresh NixOS install):
+#   The hardware config is machine-specific and lock-sticky. After
+#   nixos-generate-config writes /etc/nixos/hardware-configuration.nix,
+#   refresh just that input, then rebuild:
+#     nix flake lock --update-input hardware-config
+#     sudo nixos-rebuild switch --flake .#venus
+#   Skipping the refresh fails loudly (hash mismatch) — the flake never
+#   silently reuses another machine's disk config.
+#
+# UPDATE THE FLAKE.LOCK (refresh ALL inputs to latest — also refreshes
+# hardware-config; run only when you want to bump everything):
 #   nix flake update
+#
+# ALTERNATIVE without any lock changes (always reads the LIVE hardware
+# config, zero flake.lock churn — costs a flag on every rebuild):
+#   sudo nixos-rebuild switch --flake .#venus \
+#     --override-input hardware-config "path:/etc/nixos/hardware-configuration.nix"
 #
 # =============================================================================
 
@@ -128,6 +146,8 @@
     # regenerating the hardware config) refresh this input once — otherwise
     # eval fails loudly (hash mismatch / missing store copy):
     #   nix flake lock --update-input hardware-config
+    #   (running `nix flake update` also refreshes it, along with bumping
+    #    every other input to latest — see the header for --override-input)
     hardware-config = {
       url = "path:/etc/nixos/hardware-configuration.nix";
       flake = false;
