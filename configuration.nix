@@ -11,8 +11,11 @@
 
 {
   imports = [
-    # Auto-generated hardware scan (device UUIDs, filesystems, swap)
-    /etc/nixos/hardware-configuration.nix
+    # Auto-generated hardware scan (device UUIDs, filesystems, swap) — this
+    # machine's copy, provided as the 'hardware-config' flake input (see
+    # flake.nix) so evaluation stays pure (no --impure needed). A path input
+    # resolves to an attrset, so import its outPath (the fetched store copy).
+    inputs.hardware-config.outPath
 
     # --- System modules ---
     ./modules/boot.nix                # bootloader & kernel

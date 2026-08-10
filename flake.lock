@@ -60,6 +60,19 @@
         "type": "github"
       }
     },
+    "hardware-config": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1784502085,
+        "narHash": "sha256-Gqi1acCE4nRFjx4zBY6Fqt6FOIiScJUNVCteNkAHgmI=",
+        "path": "/etc/nixos/hardware-configuration.nix",
+        "type": "path"
+      },
+      "original": {
+        "path": "/etc/nixos/hardware-configuration.nix",
+        "type": "path"
+      }
+    },
     "hermes-agent": {
       "inputs": {
         "flake-parts": "flake-parts",
@@ -242,6 +255,7 @@
     "root": {
       "inputs": {
         "freenet-core": "freenet-core",
+        "hardware-config": "hardware-config",
         "hermes-agent": "hermes-agent",
         "home-manager": "home-manager",
         "nixpkgs": "nixpkgs_2",

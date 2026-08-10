@@ -114,6 +114,26 @@
     nixpkgs-unstable.url = "nixpkgs/nixos-unstable";
 
     # -------------------------------------------------------------------------
+    # hardware-config — THIS MACHINE's hardware configuration (path input)
+    # -------------------------------------------------------------------------
+    # NixOS generates /etc/nixos/hardware-configuration.nix on every fresh
+    # install (nixos-generate-config). Importing it as a path INPUT (instead
+    # of an absolute-path import in configuration.nix) keeps evaluation PURE,
+    # so rebuilds need no --impure flag. The path is the same on every
+    # machine; the content is always the machine-local copy.
+    # configuration.nix imports inputs.hardware-config.outPath (the input
+    # value is an attrset carrying outPath/narHash/lastModified).
+    #
+    # IMPORTANT: path inputs are locked. After installing a NEW machine (or
+    # regenerating the hardware config) refresh this input once — otherwise
+    # eval fails loudly (hash mismatch / missing store copy):
+    #   nix flake lock --update-input hardware-config
+    hardware-config = {
+      url = "path:/etc/nixos/hardware-configuration.nix";
+      flake = false;
+    };
+
+    # -------------------------------------------------------------------------
     # freenet-core — Decentralized P2P platform (Rust rewrite)
     # -------------------------------------------------------------------------
     # Rust-based peer-to-peer runtime for decentralized applications (River chat,
