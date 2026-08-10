@@ -7,6 +7,8 @@
       btw = "echo i use nixos, btw";
       # flake update + prime-agent bump — see scripts/flake-update.sh
       flake-update = "~/Documents/nixos-dotfiles/scripts/flake-update.sh";
+      # snapshot noctalia Settings UI state into the repo — see scripts/noctalia-backup.sh
+      noctalia-backup = "~/Documents/nixos-dotfiles/scripts/noctalia-backup.sh";
     };
 
     # Zsh plugins — enabled declaratively, Home Manager handles the sourcing

@@ -1,0 +1,113 @@
+[accessibility]
+ui_scale = 1.1500000096857548
+
+[audio]
+enable_overdrive = true
+enable_sounds = true
+
+[bar.default]
+capsule = true
+capsule_thickness = 0.68999998830258846
+end = [
+    "tray",
+    "notifications",
+    "clipboard",
+    "network",
+    "bluetooth",
+    "volume",
+    "brightness",
+    "battery",
+    "control-center",
+    "session"
+]
+margin_ends = 0
+padding = 10
+panel_overlap = 0
+scale = 1.2500000111758709
+start = [ "wallpaper", "media", "cpu", "sysmon" ]
+thickness = 35
+widget_spacing = 4
+
+[calendar]
+enabled = true
+
+[desktop_widgets]
+enabled = false
+
+[location]
+auto_locate = true
+
+[lockscreen_widgets]
+enabled = false
+schema_version = 2
+widget_order = [ "lockscreen-login-box@eDP-1" ]
+
+    [lockscreen_widgets.grid]
+    cell_size = 16
+    major_interval = 4
+    visible = true
+
+    [lockscreen_widgets.widget."lockscreen-login-box@eDP-1"]
+    box_height = 70.0
+    box_width = 400.0
+    cx = 768.0
+    cy = 745.0
+    output = "eDP-1"
+    rotation = 0.0
+    type = "login_box"
+
+        [lockscreen_widgets.widget."lockscreen-login-box@eDP-1".settings]
+        background_color = "surface_variant"
+        background_opacity = 0.88
+        background_radius = 12.0
+        center_password_text = false
+        input_opacity = 1.0
+        input_radius = 6.0
+        show_caps_lock = true
+        show_keyboard_layout = true
+        show_login_button = true
+
+[nightlight]
+enabled = true
+
+[plugins]
+enabled = [ "noctalia/timer" ]
+
+[shell]
+external_ip_enabled = true
+font_family = "DejaVu Sans Mono"
+password_style = "random"
+screen_time_enabled = true
+
+[theme]
+source = "wallpaper"
+wallpaper_scheme = "dysfunctional"
+
+    [theme.templates]
+    builtin_ids = [ "gtk3", "gtk4", "kcolorscheme", "kitty", "niri", "qt", "starship" ]
+    community_ids = [ "obsidian", "fuzzel", "prismlauncher", "steam", "yazi" ]
+
+[wallpaper]
+directory = "/home/venus/Pictures/Wallpapers"
+
+    [wallpaper.default]
+    path = "/home/venus/Pictures/Wallpapers/wallpaper_doll.jpg"
+
+    [wallpaper.last]
+    path = "/home/venus/Pictures/Wallpapers/wallpaper_doll.jpg"
+
+[widget.clock]
+anchor = true
+format = "{:%-I:%M %p, %A %B %d}"
+
+[widget.cpu]
+display = "graph"
+show_label = false
+visualization = "graph"
+
+[widget.network]
+show_label = false
+
+[widget.sysmon]
+stat = "disk_free"
+visualization = "none"

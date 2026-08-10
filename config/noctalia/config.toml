@@ -1,0 +1,12 @@
+# Noctalia declarative config (v5) — the hand-edited layer.
+# This file is symlinked to ~/.config/noctalia/config.toml by home-manager
+# (mkOutOfStoreSymlink in home/symlinks.nix), so edits here are live and
+# backed up by git. Most changes hot-reload via inotify; startup-only
+# settings need a noctalia restart.
+#
+# It is intentionally empty (defaults): runtime settings come from the
+# Settings UI, which writes ~/.local/state/noctalia/settings.toml — that file
+# is NOT symlinked (atomic-rename writes would break a symlink). Snapshot it
+# into config/noctalia/settings.toml with: noctalia-backup
+#
+# Reference: https://docs.noctalia.dev/v5
