@@ -63,7 +63,7 @@
     # --- Password cracking ---
     hashcat           # GPU/CPU hash cracking (uses your Iris Plus via OpenCL)
     john              # John the Ripper (Jumbo, includes all 2john helpers)
-    hydra             # network login brute forcer
+    thc-hydra         # Kali: hydra — network login brute forcer
     medusa            # parallel login brute forcer
     crunch            # wordlist generator
     hashid            # hash type identification
