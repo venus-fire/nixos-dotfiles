@@ -8,6 +8,10 @@
   # edit ~/.config/niri/config.kdl (or the repo copy directly), reload, and
   # the config is backed up by git — no read-only store round-trip.
   #
+  # IMPORTANT: mkOutOfStoreSymlink must receive the target as a QUOTED STRING.
+  # A path literal (../config/...) would be copied into the nix store by
+  # string coercion, silently defeating the out-of-store point.
+  #
   # Tradeoff: symlink targets are absolute, so the repo must live at
   # ~/Documents/nixos-dotfiles on every machine.
   #
@@ -17,7 +21,10 @@
   # symlink that file. Snapshot it into the repo instead with
   # `noctalia-backup` (see scripts/noctalia-backup.sh).
 
-  xdg.configFile."niri/config.kdl".source = config.lib.file.mkOutOfStoreSymlink ../config/niri/config.kdl;
-  xdg.configFile."niri/noctalia.kdl".source = config.lib.file.mkOutOfStoreSymlink ../config/niri/noctalia.kdl;
-  xdg.configFile."noctalia/config.toml".source = config.lib.file.mkOutOfStoreSymlink ../config/noctalia/config.toml;
+  xdg.configFile."niri/config.kdl".source =
+    config.lib.file.mkOutOfStoreSymlink "/home/venus/Documents/nixos-dotfiles/config/niri/config.kdl";
+  xdg.configFile."niri/noctalia.kdl".source =
+    config.lib.file.mkOutOfStoreSymlink "/home/venus/Documents/nixos-dotfiles/config/niri/noctalia.kdl";
+  xdg.configFile."noctalia/config.toml".source =
+    config.lib.file.mkOutOfStoreSymlink "/home/venus/Documents/nixos-dotfiles/config/noctalia/config.toml";
 }
