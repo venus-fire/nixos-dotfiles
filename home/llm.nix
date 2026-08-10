@@ -64,6 +64,7 @@
     Unit = {
       Description = "llama-server (mainline llama.cpp, Vulkan) — Qwen3-30B-A3B Q3_K_M";
       After = [ "graphical-session.target" ];
+      PartOf = [ "graphical-session.target" ];  # stop/restart with the session
     };
     Service = {
       ExecStart = lib.concatStringsSep " " [
