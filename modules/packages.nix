@@ -57,7 +57,7 @@ in
 
     # --- Messaging & communication ---
     signal-desktop
-    nicotine-plus                     # Soulseek client (via I2P)
+    nicotine-plus                     # Soulseek client (I2P-capable: configure SOCKS5 :4447 in app settings)
 
     # --- Media & entertainment ---
     strawberry                        # music player
@@ -86,7 +86,7 @@ in
 
     # --- Unstable packages ---
     pkgs-unstable.handy               # speech-to-text transcription (nixos-unstable)
-    pkgs-unstable.fetch               # file downloader (nixos-unstable)
+    pkgs-unstable.fetch               # system info fetcher (like neofetch, nixos-unstable)
   ];
 
   # ---------------------------------------------------------------------------
