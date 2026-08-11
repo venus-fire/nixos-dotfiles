@@ -57,7 +57,7 @@ in
 
     # --- Messaging & communication ---
     signal-desktop
-    nicotine-plus                     # Soulseek client (I2P-capable: configure SOCKS5 :4447 in app settings)
+    nicotine-plus                     # Soulseek client (VPN-bound via home/nicotine.nix wrapper)
 
     # --- Media & entertainment ---
     strawberry                        # music player

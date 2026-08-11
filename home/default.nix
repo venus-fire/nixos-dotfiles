@@ -11,6 +11,7 @@
     ./theming.nix
     ./symlinks.nix          # managed symlinks for niri, noctalia config
     ./qbittorrent.nix        # qBittorrent with I2P-optimised settings
+    ./nicotine.nix           # Nicotine+ with AirVPN WireGuard binding
     ./llm.nix                # little-coder + mainline llama.cpp (Vulkan)
     ./prime-agent.nix        # prime-agent RLM coding agent + kernel env
   ];
