@@ -3,11 +3,6 @@
 {
   networking.hostName = "venus";
   networking.networkmanager.enable = true;
-  # Reticulum TCP hub port — the mesh transport used by MeshChatX
-  # (services.meshchatx). Open so other mesh peers can reach this node.
-  networking.firewall.allowedTCPPorts = [ 11185 ];
-  # networking.firewall.allowedUDPPorts = [ 11185 ];  # uncomment if UDP needed
-
   # ---------------------------------------------------------------------------
   # WireGuard VPN — imported via NetworkManager (not managed declaratively)
   # ---------------------------------------------------------------------------

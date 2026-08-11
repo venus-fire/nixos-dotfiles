@@ -21,8 +21,8 @@
 #   (/dev/ttyUSB*) access.
 # - RestrictAddressFamilies is intentionally NOT set: Reticulum opens its own
 #   sockets (broadcast/raw) for mesh interfaces.
-# - Web server binds loopback only — no firewall rules needed. Mesh traffic
-#   flows through Reticulum's own sockets, not this port.
+# - Web server binds loopback only — no firewall rules for the web port. The
+#   Reticulum TCP hub port (11185) is opened for mesh peer connections.
 # =============================================================================
 
 { config, pkgs, lib, ... }:
@@ -131,6 +131,10 @@ in
     environment.systemPackages = [
       (pkgs.writeShellScriptBin "meshchatx-update" (builtins.readFile ../scripts/meshchatx-update.sh))
     ];
+
+    # Reticulum TCP hub port — open so other mesh peers can reach this node.
+    networking.firewall.allowedTCPPorts = [ 11185 ];
+    # networking.firewall.allowedUDPPorts = [ 11185 ];  # uncomment if UDP needed
 
     systemd.services.meshchatx = {
       description = "Reticulum MeshChatX web UI";

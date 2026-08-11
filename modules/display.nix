@@ -5,7 +5,10 @@
   services.displayManager.ly.enable = true;
 
   # Propagate cursor theme so xwayland-satellite and other non-niri
-  # processes also pick up the custom cursor
+  # processes also pick up the custom cursor.
+  #
+  # NOTE: The same cursor theme is also set at the user level in
+  # home/theming.nix (GTK cursor, dconf). Keep both in sync if changing.
   environment.sessionVariables = {
     XCURSOR_THEME = "volantes_cursors";
     XCURSOR_SIZE = "24";

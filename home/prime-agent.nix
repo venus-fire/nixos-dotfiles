@@ -17,14 +17,19 @@
 { pkgs, ... }:
 
 let
+  # Single source of truth for the kernel Python path — used both by the
+  # wrapper script AND the session variable, so they stay in sync.
+  kernelPython = "${pkgs.prime-agent-kernel}/bin/python3.12";
+
   prime-agent = pkgs.writeShellScriptBin "prime-agent" ''
-    export PRIME_AGENT_KERNEL_PYTHON="${pkgs.prime-agent-kernel}/bin/python3.12"
+    export PRIME_AGENT_KERNEL_PYTHON="${kernelPython}"
     exec "${pkgs.prime-agent}/bin/prime-agent" "$@"
   '';
 in
 {
   home.packages = [ prime-agent ];
 
-  home.sessionVariables.PRIME_AGENT_KERNEL_PYTHON =
-    "${pkgs.prime-agent-kernel}/bin/python3.12";
+  # Belt-and-braces: processes that bypass the wrapper (e.g. spawned from
+  # a shell that hasn't sourced the wrapper) still see the right kernel.
+  home.sessionVariables.PRIME_AGENT_KERNEL_PYTHON = kernelPython;
 }
