@@ -35,6 +35,8 @@ in
     firefox
     cool-retro-term
     kitty
+    ungoogled-chromium
+    librewolf
 
     # --- Desktop environment tools ---
     fuzzel                            # app launcher (also bound in niri)
