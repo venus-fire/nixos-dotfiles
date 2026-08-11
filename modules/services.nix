@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ ... }:
 
 {
   # ---- Syncthing (P2P file sync) ----

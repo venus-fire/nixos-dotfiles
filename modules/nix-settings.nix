@@ -5,7 +5,7 @@
 # unfree package policy, substituters, etc.
 # =============================================================================
 
-{ pkgs, ... }:
+{ ... }:
 
 {
   # Required for the flake-based workflow (nixos-rebuild --flake, nix flake ...)

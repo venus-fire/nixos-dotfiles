@@ -12,7 +12,7 @@
 # handles lid-close more precisely (detecting battery vs AC state).
 # =============================================================================
 
-{ pkgs, lib, ... }:
+{ pkgs, ... }:
 
 let
   # lid-close — CLI tool spawned by niri on lid-close events.
