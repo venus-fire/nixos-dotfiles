@@ -71,6 +71,7 @@ in
     prismlauncher                     # Minecraft launcher
 
     # --- Development tools ---
+    hermes                            # CLI AI agent (Nous Research)
     gh                                # GitHub CLI
 
     # --- Gaming ---
