@@ -7,9 +7,17 @@
   # garbage on this laptop's Intel Iris Plus iGPU regardless of flags.
   # Standard quant types (Q3_K_M etc.) use the mature, well-tested kernels.
   #
-  # Model: Qwen3-30B-A3B (MoE, ~3B active params) Q3_K_M — llama.cpp mmaps
-  # the GGUF and streams only the active experts from disk, so a 14.8G file
-  # runs fine on this laptop. Model files live in ~/models (root NVMe).
+  # 2026-08-11 model trials (replacing the 30B MoE that was too slow):
+  #
+  # Candidate 1: Qwen2.5-Coder-1.5B-Instruct Q8_0 — dense, fast (57 tok/s
+  #   prompt, 9.7 tok/s gen), but 1.5B is weak for complex coding.
+  # Candidate 2: Qwen3.5-4B-Super-Coder Q4_0 — GDN hybrid, 1.2 tok/s prompt
+  #   (GDN on CPU), unusably slow.
+  # Candidate 3 (current): LFM2.5-2.6B Q5_K_M — Liquid hybrid architecture,
+  #   7.4 tok/s prompt, 10.2 tok/s gen. Fast enough, 2.6B params.
+  #   The 30B MoE models were deleted from disk to free ~26 GB.
+  #
+  # Previous MoE/crash history preserved below for reference:
   #
   # Qwen3-Coder-30B-A3B (Q3_K_S) was tried (2026-08-09): same qwen3moe arch,
   # but it crashes with GGML_ASSERT(id >= 0 && id < n_expert) at
@@ -51,26 +59,27 @@
   # little-coder's default port 8888.
   xdg.configFile."little-coder/models.json".source = ../config/little-coder/models.json;
 
-  # Serve the Qwen3-30B-A3B MoE model on 127.0.0.1:8888 with the Vulkan
-  # backend. Conservative flags learned from the ternary saga:
-  #   - -np 1: single slot (multi-slot decode triggered device-lost crashes)
-  #   - --flash-attn on: verified stable for a full little-coder session on the
-  #     MoE model (the ternary-era crash suspicion didn't apply to Q3_K_M)
-  #   - --cache-ram 2048: 2G prompt-cache budget — reuse for repeated prompts
-  #     without the ~8G default reservation that caused memory pressure
-  #   - -c 32768: 32K context (KV cache lives in iGPU shared memory; 64K OOMs)
+  # Serve the LFM2.5-2.6B Q5_K_M on 127.0.0.1:8888 with the Vulkan
+  # backend. Liquid hybrid architecture — runs well on this laptop's Intel
+  # Iris Plus iGPU (7.4 tok/s prompt, 10.2 tok/s gen). Uses a thinking/
+  # reasoning mode (reasoning_content in responses).
+  #   - -ngl 99: offload all layers (1.81 GB Q5_K_M, fits easily)
+  #   - -c 32768: 32K context
+  #   - --flash-attn on: beneficial
+  #   - -np 1: single slot
+  #   - --cache-ram 1024: 1G prompt-cache budget
   # User service so it has GPU access and the model path under /home/venus.
   systemd.user.services.llama-server = {
     Unit = {
-      Description = "llama-server (mainline llama.cpp, Vulkan) — Qwen3-30B-A3B Q3_K_M";
+      Description = "llama-server (mainline llama.cpp, Vulkan) — LFM2.5-2.6B Q5_K_M";
       After = [ "graphical-session.target" ];
-      PartOf = [ "graphical-session.target" ];  # stop/restart with the session
+      PartOf = [ "graphical-session.target" ];
     };
     Service = {
       ExecStart = lib.concatStringsSep " " [
         "${pkgs-unstable.llama-cpp-vulkan}/bin/llama-server"
-        "-m /home/venus/models/Qwen3-30B-A3B-Instruct-2507.Q3_K_M.gguf"
-        "--host 127.0.0.1 --port 8888 -c 32768 --jinja -ngl 99 --cpu-moe -np 1 --flash-attn on --cache-ram 2048"
+        "-m /home/venus/models/LFM2.5-2.6B-Q5_K_M.gguf"
+        "--host 127.0.0.1 --port 8888 -c 32768 --jinja -ngl 99 -np 1 --flash-attn on --cache-ram 1024"
       ];
       Restart = "on-failure";
       RestartSec = "5";

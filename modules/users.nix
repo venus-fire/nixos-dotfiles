@@ -7,7 +7,7 @@
   users.users."venus" = {
     isNormalUser = true;
     description = "venus fire";
-    extraGroups = [ "networkmanager" "wheel" ];
+    extraGroups = [ "networkmanager" "wheel" "dialout" ];
     packages = [];
 
     # Set Zsh as the default login shell (replaces Bash)

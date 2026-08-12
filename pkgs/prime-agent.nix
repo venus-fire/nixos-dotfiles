@@ -35,11 +35,11 @@
 
 buildNpmPackage rec {
   pname = "prime-agent";
-  version = "0.7.1";
+  version = "0.7.2";
 
   src = fetchurl {
     url = "https://github.com/PrimeIntellect-ai/prime-agent/releases/download/v${version}/prime-agent-${version}.tgz";
-    hash = "sha256-1oYSyDI5yq+rcsx2xVrFcr/QegWeqPvSo92+HytV3Ns=";
+    hash = "sha256-vFRx8qYm1ye4ikXrdF//k7EMVUo8T8WRLyXYxkuYf14=";
   };
 
   # npm pack tarballs unpack to a `package/` subdirectory
@@ -47,7 +47,7 @@ buildNpmPackage rec {
 
   # Hash of the npm dependency tree (from prefetch-npm-deps against the
   # vendored lockfile — see the bump instructions at the top).
-  npmDepsHash = "sha256-chC7YTkSFYLJ4369xylC0JVVcGZ8mD22V4p7xvpzAmY=";
+  npmDepsHash = "sha256-8VaSwTzXIhsJf2dNjK1oeB67/BzEa9bdCWiJFE9XasI=";
 
   postPatch = ''
     cp ${./prime-agent/package-lock.json} package-lock.json

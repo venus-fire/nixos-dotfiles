@@ -1,5 +1,5 @@
 {
-  "default": "llamacpp/qwen3-30b-a3b",
+  "default": "llamacpp/lfm2.5-2.6b",
   "providers": {
     "llamacpp": {
       "api": "openai-completions",
@@ -7,10 +7,12 @@
       "apiKey": "LLAMACPP_API_KEY",
       "models": [
         {
-          "id": "qwen3-30b-a3b",
-          "name": "Qwen3 30B-A3B Instruct Q3_K_M (MoE, streamed from disk)",
-          "reasoning": false,
-          "input": ["text"],
+          "id": "lfm2.5-2.6b",
+          "name": "LFM2.5-2.6B Q5_K_M (Liquid hybrid, fast)",
+          "reasoning": true,
+          "input": [
+            "text"
+          ],
           "contextWindow": 32768,
           "maxTokens": 4096,
           "kind": "chat"
