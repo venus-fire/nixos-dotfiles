@@ -45,6 +45,17 @@ let
     propagatedBuildInputs = deps;
   };
 
+  # Same, but for skills whose source lives in this repo (pkgs/<name>) instead
+  # of the bundled dist — e.g. custom integrations like tavily.
+  mkLocalSkill = { name, deps ? [ ] }: python312Packages.buildPythonPackage {
+    pname = "prime-agent-skill-${name}";
+    version = "0.1.0";
+    src = ./prime-agent-skill-${name};
+    format = "pyproject";
+    nativeBuildInputs = [ python312Packages.hatchling ];
+    propagatedBuildInputs = deps;
+  };
+
   primeAgentRuntime = python312Packages.buildPythonPackage {
     pname = "prime-agent-runtime";
     version = "0.1.0";
@@ -71,6 +82,7 @@ let
     (mkSkill { name = "refine"; })
     (mkSkill { name = "rlm-heartbeat"; })
     (mkSkill { name = "websearch"; deps = [ python312Packages.httpx primeAgentRuntime ]; })
+    (mkLocalSkill { name = "tavily"; deps = [ python312Packages.mcp python312Packages.httpx primeAgentRuntime ]; })
   ];
 in
 python312.withPackages (ps: [
