@@ -62,12 +62,14 @@
   # Serve the LFM2.5-2.6B Q5_K_M on 127.0.0.1:8888 with the Vulkan
   # backend. Liquid hybrid architecture — runs well on this laptop's Intel
   # Iris Plus iGPU (7.4 tok/s prompt, 10.2 tok/s gen). Uses a thinking/
-  # reasoning mode (reasoning_content in responses).
+  # reasoning mode (reasoning_content in responses). --reasoning off
+  # disables the thinking phase so it answers directly (faster, shorter).
   #   - -ngl 99: offload all layers (1.81 GB Q5_K_M, fits easily)
   #   - -c 32768: 32K context
   #   - --flash-attn on: beneficial
   #   - -np 1: single slot
   #   - --cache-ram 1024: 1G prompt-cache budget
+  #   - --reasoning off: no thinking tokens
   # User service so it has GPU access and the model path under /home/venus.
   systemd.user.services.llama-server = {
     Unit = {
@@ -79,7 +81,7 @@
       ExecStart = lib.concatStringsSep " " [
         "${pkgs-unstable.llama-cpp-vulkan}/bin/llama-server"
         "-m /home/venus/models/LFM2.5-2.6B-Q5_K_M.gguf"
-        "--host 127.0.0.1 --port 8888 -c 32768 --jinja -ngl 99 -np 1 --flash-attn on --cache-ram 1024"
+        "--host 127.0.0.1 --port 8888 -c 32768 --jinja -ngl 99 -np 1 --flash-attn on --cache-ram 1024 --reasoning off"
       ];
       Restart = "on-failure";
       RestartSec = "5";
