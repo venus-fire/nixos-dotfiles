@@ -65,6 +65,7 @@ in
     strawberry                        # music player
     mpv                               # video player
     ffmpeg                            # media converter
+    yt-dlp                            # media downloader
 
     # --- Productivity ---
     keepassxc                         # password manager
