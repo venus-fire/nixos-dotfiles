@@ -1,5 +1,5 @@
 {
-  "default": "llamacpp/lfm2.5-1.2b-nova-fc",
+  "default": "llamacpp/lfm2.5-2.6b",
   "providers": {
     "llamacpp": {
       "api": "openai-completions",
@@ -7,9 +7,9 @@
       "apiKey": "LLAMACPP_API_KEY",
       "models": [
         {
-          "id": "lfm2.5-1.2b-nova-fc",
-          "name": "LFM2.5-1.2B-Nova-Function-Calling Q5_K_M",
-          "reasoning": false,
+          "id": "lfm2.5-2.6b",
+          "name": "LFM2.5-2.6B Q5_K_M",
+          "reasoning": true,
           "input": [
             "text"
           ],

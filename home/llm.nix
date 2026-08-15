@@ -19,9 +19,12 @@
   #   user issues with it.
   # Candidate 5: MiniCPM5-1B-Agentic-Tooluse-v3 Q8_0 — kept thinking
   #   endlessly instead of answering.
-  # Candidate 6 (current): LFM2.5-1.2B-Nova-Function-Calling Q5_K_M —
+  # Candidate 6: LFM2.5-1.2B-Nova-Function-Calling Q5_K_M —
   #   Liquid architecture, fine-tuned for function calling. No thinking
   #   mode. 17.6 tok/s prompt, 22.9 tok/s gen.
+  # Candidate 7 (current, 2026-08-14 — back on the 2.6B): LFM2.5-2.6B
+  #   Q5_K_M — stronger for coding than the 1.2B. Reasoning left ON
+  #   (user preference); model thinks in reasoning_content.
   #
   # Previous MoE/crash history preserved below for reference:
   #
@@ -65,27 +68,68 @@
   # little-coder's default port 8888.
   xdg.configFile."little-coder/models.json".source = ../config/little-coder/models.json;
 
-  # Serve the LFM2.5-1.2B-Nova-Function-Calling Q5_K_M on 127.0.0.1:8888
-  # with the Vulkan backend. Liquid hybrid architecture (conv + attention).
-  # Fine-tuned for function calling (ChatML format, JSON output). No
-  # thinking/reasoning mode. 17.6 tok/s prompt, 22.9 tok/s gen.
-  #   - -ngl 99: offload all layers (0.79 GB Q5_K_M, tiny)
+  # pi (Earendil coding agent, 0.75.4) — same local llama-server. pi reads
+  # ~/.pi/agent/models.json (reloaded each time /model is opened).
+  # NOTE: the home-manager `programs.pi-coding-agent` module is master-only;
+  # our locked release-26.05 home-manager predates it, so we manage the file
+  # directly (identical target path/JSON the option would write).
+  #   - apiKey "noop": dummy — llama-server ignores auth (pi requires SOME key
+  #     for the model to be selectable in /model).
+  #   - compat.supportsDeveloperRole=false / supportsReasoningEffort=false:
+  #     plain system role; llama.cpp ignores reasoning_effort anyway, and
+  #     the model still reasons on its own (reasoning: true above).
+  home.file.".pi/agent/models.json".text = builtins.toJSON {
+    providers = {
+      llamacpp = {
+        baseUrl = "http://127.0.0.1:8888/v1";
+        api = "openai-completions";
+        apiKey = "noop";
+        compat = {
+          supportsDeveloperRole = false;
+          supportsReasoningEffort = false;
+        };
+        models = [
+          {
+            id = "lfm2.5-2.6b";
+            name = "LFM2.5-2.6B Q5_K_M";
+            reasoning = true;
+            input = [ "text" ];
+            contextWindow = 32768;
+            maxTokens = 4096;
+            cost = {
+              input = 0;
+              output = 0;
+              cacheRead = 0;
+              cacheWrite = 0;
+            };
+          }
+        ];
+      };
+    };
+  };
+
+  # Serve the LFM2.5-2.6B Q5_K_M on 127.0.0.1:8888 with the Vulkan
+  # backend. Liquid hybrid architecture — runs well on this laptop's Intel
+  # Iris Plus iGPU (7.4 tok/s prompt, 10.2 tok/s gen). Uses a thinking/
+  # reasoning mode (reasoning_content in responses); left ON (user
+  # preference, 2026-08-15).
+  #   - -ngl 99: offload all layers (1.81 GB Q5_K_M, fits easily)
   #   - -c 32768: 32K context
   #   - --flash-attn on: beneficial
   #   - -np 1: single slot
-  #   - --cache-ram 512: small prompt-cache budget
+  #   - --cache-ram 1024: 1G prompt-cache budget
   # User service so it has GPU access and the model path under /home/venus.
   systemd.user.services.llama-server = {
     Unit = {
-      Description = "llama-server (mainline llama.cpp, Vulkan) — LFM2.5-1.2B-Nova-Function-Calling Q5_K_M";
+      Description = "llama-server (mainline llama.cpp, Vulkan) — LFM2.5-2.6B Q5_K_M";
       After = [ "graphical-session.target" ];
       PartOf = [ "graphical-session.target" ];
     };
     Service = {
       ExecStart = lib.concatStringsSep " " [
         "${pkgs-unstable.llama-cpp-vulkan}/bin/llama-server"
-        "-m /home/venus/models/LFM2.5-1.2B-Nova-Function-Calling.Q5_K_M.gguf"
-        "--host 127.0.0.1 --port 8888 -c 32768 --jinja -ngl 99 -np 1 --flash-attn on --cache-ram 512"
+        "-m /home/venus/models/LFM2.5-2.6B-Q5_K_M.gguf"
+        "--host 127.0.0.1 --port 8888 -c 32768 --jinja -ngl 99 -np 1 --flash-attn on --cache-ram 1024"
       ];
       Restart = "on-failure";
       RestartSec = "5";
