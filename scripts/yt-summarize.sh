@@ -5,8 +5,10 @@
 # =============================================================================
 # Usage:
 #   yt-summarize <youtube-url> [more urls...]
-#   yt-summarize -l de <url>                  # subtitles in German
-#   yt-summarize -m "some/vendor:model:free" <url>   # pin a specific model
+#   yt-summarize --list-models                 # browse free chat models
+#   yt-summarize --set-model <id>              # save a default model
+#   yt-summarize -l de <url>                   # subtitles in German
+#   yt-summarize -m "some/vendor:model:free" <url>   # override model for a run
 #
 # How it works:
 #   1. yt-dlp downloads the video's subtitles (manual captions preferred,
@@ -15,9 +17,14 @@
 #   3. Transcripts longer than YT_SUM_CHUNK chars are split into chunks; each
 #      chunk is summarized ("map"), then the part-summaries are combined into
 #      one final summary ("reduce").
-#   4. The model defaults to "openrouter/free" — OpenRouter's router that
-#      AUTOMATICALLY picks a free (:free) model per request, so no model
-#      pinning is needed. Override with -m or YT_SUM_MODEL.
+#   4. Model selection (first match wins):
+#        -m MODEL  >  $YT_SUM_MODEL  >  saved default
+#      (~/.config/yt-summarize/model, written by --set-model)
+#      >  auto-pick the free (:free) CHAT model with the largest context
+#      (OpenRouter's free list; safety/classifier/embedding/audio models are
+#      filtered out — the plain "openrouter/free" router does NOT filter and
+#      can land on e.g. nvidia/nemotron-3.5-content-safety:free)
+#      >  fallback "openrouter/free" router.
 #
 # Requirements (declared in the dotfiles repo):
 #   yt-dlp  (modules/packages.nix)
@@ -34,7 +41,8 @@
 # Env overrides:
 #   OPENROUTER_API_KEY   key (takes precedence over the key file)
 #   OPENROUTER_KEY_FILE  key file (default: ~/.config/openrouter/key)
-#   YT_SUM_MODEL         model id (default: openrouter/free)
+#   YT_SUM_MODEL         model id (overrides saved default; -m beats it)
+#   YT_SUM_MODEL_FILE    saved-default file (default: ~/.config/yt-summarize/model)
 #   YT_SUM_LANG          subtitle language (default: en)
 #   YT_SUM_CHUNK         max chars per map chunk (default: 60000)
 #   YT_SUM_MAX_TOKENS    max completion tokens per call (default: 4096)
@@ -75,8 +83,14 @@ def parse_args():
     p.add_argument("urls", nargs="*", metavar="URL", help="YouTube video URL(s)")
     p.add_argument("-l", "--lang", default=os.environ.get("YT_SUM_LANG", "en"),
                    help="subtitle language (default: en)")
-    p.add_argument("-m", "--model", default=os.environ.get("YT_SUM_MODEL", "openrouter/free"),
-                   help="model id (default: openrouter/free)")
+    p.add_argument("-m", "--model",
+                   help="model id (default: saved default, else auto-picked "
+                        "best free chat model; see --list-models)")
+    p.add_argument("--list-models", action="store_true",
+                   help="list OpenRouter's free chat models and exit")
+    p.add_argument("--set-model", metavar="MODEL_ID",
+                   help="save MODEL_ID as the default model and exit "
+                        "(stored in ~/.config/yt-summarize/model, outside this repo)")
     p.add_argument("-c", "--chunk", type=int,
                    default=int(os.environ.get("YT_SUM_CHUNK", "60000")),
                    help="max chars per map chunk (default: 60000)")
@@ -93,6 +107,71 @@ def get_key():
     if not key and os.path.isfile(KEY_FILE):
         key = open(KEY_FILE, encoding="utf-8").read().strip()
     return key
+
+
+# ---------------------------------------------------------------------------
+# model selection
+# ---------------------------------------------------------------------------
+MODEL_FILE = os.environ.get(
+    "YT_SUM_MODEL_FILE", os.path.expanduser("~/.config/yt-summarize/model")
+)
+
+# model ids that are NOT chat/summarization models — never auto-pick these
+# (the plain "openrouter/free" router does not filter, which is how a
+# content-safety classifier can end up "summarizing" a transcript).
+_NON_CHAT_HINTS = (
+    "content-safety", "safety", "guard", "moder", "classif", "reward",
+    "embed", "rerank", "speech", "audio", "whisper", "asr", "stt", "tts",
+    "transcrib", "dall-e", "flux", "sdxl", "stable-diffusion", "upscal",
+    "segment", "detect", "ocr",
+)
+
+
+def is_chat_model(model_id):
+    return not any(h in model_id.lower() for h in _NON_CHAT_HINTS)
+
+
+def fetch_free_models(api_url):
+    """Free (:free) chat-capable models, sorted by context length desc."""
+    req = urllib.request.Request(
+        f"{api_url}/models", headers={"User-Agent": "yt-summarize"})
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        data = json.load(resp)
+    models = []
+    for m in data.get("data", []):
+        mid = m.get("id", "")
+        if not mid.endswith(":free") or not is_chat_model(mid):
+            continue
+        models.append({
+            "id": mid,
+            "context_length": m.get("context_length") or 0,
+            "name": m.get("name") or mid,
+        })
+    models.sort(key=lambda m: (-m["context_length"], m["id"]))
+    return models
+
+
+def saved_default_model():
+    try:
+        with open(MODEL_FILE, encoding="utf-8") as f:
+            return f.read().strip() or None
+    except OSError:
+        return None
+
+
+def resolve_model(api_url, cli_model):
+    """-m arg > $YT_SUM_MODEL > saved default > auto-picked free > router."""
+    model = cli_model or os.environ.get("YT_SUM_MODEL") or saved_default_model()
+    if model:
+        return model, "explicit"
+    try:
+        free = fetch_free_models(api_url)
+        if free:
+            return free[0]["id"], "auto (best free chat model by context)"
+    except Exception as e:
+        print(f"  note: could not fetch free model list ({e}); "
+              "falling back to openrouter/free", file=sys.stderr)
+    return "openrouter/free", "router fallback"
 
 
 # ---------------------------------------------------------------------------
@@ -204,6 +283,9 @@ def call_api(api_url, model, max_tokens, key, sys_prompt, user_prompt):
     if model_used:
         print(f"  ↳ resolved model: {model_used}"
               + (f" ({total} tokens)" if total else ""), file=sys.stderr)
+        if not is_chat_model(model_used):
+            print(f"  ⚠ that model is not a chat/summarization model — run "
+                  f"--list-models and pick a chat model with -m", file=sys.stderr)
     if not content:
         print("  warning: empty assistant response", file=sys.stderr)
     return content
@@ -272,8 +354,49 @@ def summarize_transcript(cfg, key, title, uploader, duration, transcript):
 # ---------------------------------------------------------------------------
 def main():
     cfg = parse_args()
+
+    # --- model browsing / default selection (no API key needed) -----------
+    if cfg.list_models:
+        try:
+            free = fetch_free_models(cfg.api_url)
+        except Exception as e:
+            print(f"error: could not fetch model list from {cfg.api_url}: {e}",
+                  file=sys.stderr)
+            sys.exit(1)
+        if not free:
+            print("no free chat models found on OpenRouter right now",
+                  file=sys.stderr)
+            sys.exit(1)
+        cur = saved_default_model()
+        rec = free[0]
+        print("Free chat models on OpenRouter (sorted by context length):")
+        for m in free:
+            tag = ""
+            if m["id"] == cur:
+                tag = "  <- saved default"
+            elif m["id"] == rec["id"] and cur is None:
+                tag = "  <- recommended (auto default)"
+            print(f"  {m['context_length']:>8}  {m['id']}{tag}")
+        print()
+        print("  use:      yt-summarize -m <id> URL")
+        print("  set once: yt-summarize --set-model <id>")
+        print(f"  default file: {MODEL_FILE}")
+        return 0
+
+    if cfg.set_model:
+        model_id = cfg.set_model.strip()
+        if not model_id:
+            print("error: empty model id", file=sys.stderr)
+            sys.exit(2)
+        os.makedirs(os.path.dirname(MODEL_FILE), exist_ok=True)
+        with open(MODEL_FILE, "w", encoding="utf-8") as f:
+            f.write(model_id + "\n")
+        print(f"saved default model: {model_id}")
+        print(f"  ({MODEL_FILE})")
+        return 0
+
     if not cfg.urls:
-        print("error: no URL given (try -h)", file=sys.stderr)
+        print("error: no URL given (try -h, or --list-models)", file=sys.stderr)
         sys.exit(2)
     if cfg.chunk < 1:
         print("error: invalid chunk size", file=sys.stderr)
@@ -301,6 +424,9 @@ def main():
               file=sys.stderr)
         print("  get a free key: https://openrouter.ai/keys", file=sys.stderr)
         sys.exit(2)
+
+    cfg.model, how = resolve_model(cfg.api_url, cfg.model)
+    print(f"model: {cfg.model} [{how}]", file=sys.stderr)
 
     for url in cfg.urls:
         print(f"== {url}", file=sys.stderr)

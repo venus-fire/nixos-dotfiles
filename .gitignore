@@ -22,3 +22,7 @@ result-*
 # Auto-generated hardware configuration — machine-specific
 hardware-configuration.nix
 .kate-swp
+
+# Python
+__pycache__/
+*.pyc
