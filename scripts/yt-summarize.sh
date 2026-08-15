@@ -493,6 +493,93 @@ def summarize_transcript(cfg, key, title, uploader, duration, transcript):
 
 
 # ---------------------------------------------------------------------------
+# terminal markdown coloring (pure ANSI — no dependencies, works on any tty)
+# ---------------------------------------------------------------------------
+# Renders the markdown summary with basic colors. Disabled automatically when
+# stdout is not a terminal (pipes/files), when NO_COLOR is set, or TERM=dumb —
+# so piping stays clean. Default colors suit dark themes (Noctalia).
+_ANSI = {
+    "reset": "\x1b[0m", "bold": "\x1b[1m", "dim": "\x1b[2m",
+    "italic": "\x1b[3m", "underline": "\x1b[4m", "reverse": "\x1b[7m",
+    "cyan": "\x1b[96m", "yellow": "\x1b[93m", "magenta": "\x1b[95m",
+    "blue": "\x1b[94m", "green": "\x1b[92m", "red": "\x1b[91m",
+    "gray": "\x1b[90m", "white": "\x1b[97m",
+}
+_MD_COLOR = None  # lazy: None=undecided, True/False after first check
+
+
+def _want_color():
+    global _MD_COLOR
+    if _MD_COLOR is None:
+        term = os.environ.get("TERM", "")
+        _MD_COLOR = (sys.stdout.isatty()
+                     and os.environ.get("NO_COLOR") is None
+                     and term not in ("", "dumb"))
+    return _MD_COLOR
+
+
+# placeholders: keep ANSI codes out of the regexes until the line is done
+# (otherwise the link regex can match the '[' inside an ESC[..m sequence)
+_PB = "\x00B"; _PI = "\x00I"; _PC = "\x00C"; _PU = "\x00U"; _PR = "\x00R"
+
+
+def _md_inline(s):
+    """Format inline markdown within one line: code, bold, italic, links."""
+    s = re.sub(r"`([^`]+)`",
+               lambda m: _PC + m.group(1) + _PR, s)
+    s = re.sub(r"\*\*([^*]+)\*\*",
+               lambda m: _PB + m.group(1) + _PR, s)
+    s = re.sub(r"(?<!\*)\*([^*\n]+)\*(?!\*)",
+               lambda m: _PI + m.group(1) + _PR, s)
+    s = re.sub(r"\[([^\]]+)\]\(([^)]+)\)",
+               lambda m: _PU + _PC + m.group(1) + _PR + " (" + m.group(2) + ")", s)
+    return (s.replace(_PB, _ANSI["bold"]).replace(_PI, _ANSI["italic"])
+             .replace(_PC, _ANSI["cyan"]).replace(_PU, _ANSI["underline"])
+             .replace(_PR, _ANSI["reset"]))
+
+
+def render_markdown(text):
+    """Colorize a markdown string for the terminal (plain text if not a tty)."""
+    if not _want_color():
+        return text
+    out = []
+    in_code = False
+    for line in text.split("\n"):
+        stripped = line.lstrip()
+        if stripped.startswith("```"):
+            in_code = not in_code
+            out.append(_ANSI["gray"] + line + _ANSI["reset"])
+            continue
+        if in_code:
+            out.append(_ANSI["reverse"] + line + _ANSI["reset"])
+            continue
+        m = re.match(r"^(#{1,6})\s+(.*)$", stripped)          # ATX headers
+        if m:
+            level = len(m.group(1))
+            color = {1: "cyan", 2: "yellow", 3: "magenta"}.get(level, "white")
+            out.append(_ANSI["bold"] + _ANSI[color] + "#" * level + " "
+                       + _md_inline(m.group(2)) + _ANSI["reset"])
+            continue
+        if re.match(r"^([-*_])\1{2,}$", stripped):            # horizontal rule
+            out.append(_ANSI["gray"] + line + _ANSI["reset"])
+            continue
+        if stripped.startswith(">"):                            # blockquote
+            out.append(_ANSI["gray"] + _md_inline(line) + _ANSI["reset"])
+            continue
+        bm = re.match(r"^(\s*)([-*+]|\d+\.)\s+(.*)$", line)  # lists
+        if bm:
+            indent, marker, rest = bm.group(1), bm.group(2), bm.group(3)
+            if marker.endswith("."):
+                mark = _ANSI["bold"] + _ANSI["yellow"] + marker + _ANSI["reset"]
+            else:
+                mark = _ANSI["cyan"] + marker + _ANSI["reset"]
+            out.append(f"{indent}{mark} " + _md_inline(rest) + _ANSI["reset"])
+            continue
+        out.append(_md_inline(line))
+    return "\n".join(out)
+
+
+# ---------------------------------------------------------------------------
 # main
 # ---------------------------------------------------------------------------
 def main():
@@ -583,7 +670,8 @@ def main():
         print(f"  transcript: {len(transcript)} chars", file=sys.stderr)
 
         try:
-            print(summarize_transcript(cfg, key, title, uploader, duration, transcript))
+            print(render_markdown(
+                summarize_transcript(cfg, key, title, uploader, duration, transcript)))
         except (RuntimeError, ApiError) as e:
             print(f"error: {e}", file=sys.stderr)
         print(file=sys.stderr)
