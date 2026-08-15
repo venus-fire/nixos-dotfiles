@@ -5,10 +5,9 @@
 # =============================================================================
 # Usage:
 #   yt-summarize <youtube-url> [more urls...]
-#   yt-summarize --list-models                 # browse free chat models
-#   yt-summarize --set-model <id>              # save a default model
+#   yt-summarize --list-models                 # browse auto-pickable free models
 #   yt-summarize -l de <url>                   # subtitles in German
-#   yt-summarize -m "some/vendor:model:free" <url>   # override model for a run
+#   yt-summarize -m "some/vendor:model:free" <url>   # one-off override (optional)
 #
 # How it works:
 #   1. yt-dlp downloads the video's subtitles (manual captions preferred,
@@ -17,14 +16,15 @@
 #   3. Transcripts longer than YT_SUM_CHUNK chars are split into chunks; each
 #      chunk is summarized ("map"), then the part-summaries are combined into
 #      one final summary ("reduce").
-#   4. Model selection (first match wins):
-#        -m MODEL  >  $YT_SUM_MODEL  >  saved default
-#      (~/.config/yt-summarize/model, written by --set-model)
-#      >  auto-pick the free (:free) CHAT model with the largest context
-#      (OpenRouter's free list; safety/classifier/embedding/audio models are
-#      filtered out — the plain "openrouter/free" router does NOT filter and
-#      can land on e.g. nvidia/nemotron-3.5-content-safety:free)
-#      >  fallback "openrouter/free" router.
+#   4. Model selection — always automatic, nothing to maintain:
+#      fetch OpenRouter's free (:free) model list, filter OUT non-chat models
+#      (safety/classifier/embedding/audio/transcription — the plain
+#      "openrouter/free" router does NOT filter and can land on e.g.
+#      nvidia/nemotron-3.5-content-safety:free), sort by context length, and
+#      use the best one. If a model becomes unavailable (free models rotate),
+#      the next model in the list is tried automatically. Only if the whole
+#      list fails is "openrouter/free" used as a last-resort router.
+#      Optional one-off override with -m or $YT_SUM_MODEL (no file to edit).
 #
 # Requirements (declared in the dotfiles repo):
 #   yt-dlp  (modules/packages.nix)
@@ -41,8 +41,7 @@
 # Env overrides:
 #   OPENROUTER_API_KEY   key (takes precedence over the key file)
 #   OPENROUTER_KEY_FILE  key file (default: ~/.config/openrouter/key)
-#   YT_SUM_MODEL         model id (overrides saved default; -m beats it)
-#   YT_SUM_MODEL_FILE    saved-default file (default: ~/.config/yt-summarize/model)
+#   YT_SUM_MODEL         one-off model override (same as -m; otherwise auto)
 #   YT_SUM_LANG          subtitle language (default: en)
 #   YT_SUM_CHUNK         max chars per map chunk (default: 60000)
 #   YT_SUM_MAX_TOKENS    max completion tokens per call (default: 4096)
@@ -84,13 +83,10 @@ def parse_args():
     p.add_argument("-l", "--lang", default=os.environ.get("YT_SUM_LANG", "en"),
                    help="subtitle language (default: en)")
     p.add_argument("-m", "--model",
-                   help="model id (default: saved default, else auto-picked "
-                        "best free chat model; see --list-models)")
+                   help="optional one-off model override (default: auto-picked "
+                        "best free chat model, with automatic failover)")
     p.add_argument("--list-models", action="store_true",
-                   help="list OpenRouter's free chat models and exit")
-    p.add_argument("--set-model", metavar="MODEL_ID",
-                   help="save MODEL_ID as the default model and exit "
-                        "(stored in ~/.config/yt-summarize/model, outside this repo)")
+                   help="list the free chat models the script auto-picks from")
     p.add_argument("-c", "--chunk", type=int,
                    default=int(os.environ.get("YT_SUM_CHUNK", "60000")),
                    help="max chars per map chunk (default: 60000)")
@@ -112,10 +108,6 @@ def get_key():
 # ---------------------------------------------------------------------------
 # model selection
 # ---------------------------------------------------------------------------
-MODEL_FILE = os.environ.get(
-    "YT_SUM_MODEL_FILE", os.path.expanduser("~/.config/yt-summarize/model")
-)
-
 # model ids that are NOT chat/summarization models — never auto-pick these
 # (the plain "openrouter/free" router does not filter, which is how a
 # content-safety classifier can end up "summarizing" a transcript).
@@ -151,27 +143,40 @@ def fetch_free_models(api_url):
     return models
 
 
-def saved_default_model():
-    try:
-        with open(MODEL_FILE, encoding="utf-8") as f:
-            return f.read().strip() or None
-    except OSError:
-        return None
+class ApiError(Exception):
+    pass
 
 
-def resolve_model(api_url, cli_model):
-    """-m arg > $YT_SUM_MODEL > saved default > auto-picked free > router."""
-    model = cli_model or os.environ.get("YT_SUM_MODEL") or saved_default_model()
-    if model:
-        return model, "explicit"
+class FatalApiError(ApiError):
+    """Auth/credit failure — pointless to try another model, stop."""
+
+
+class ModelUnavailable(ApiError):
+    """This model is gone/not accessible — try the next candidate."""
+
+
+class TransientApiError(ApiError):
+    """Rate limit / 5xx / network, retries exhausted — try the next model."""
+
+
+def resolve_models(api_url, cli_model):
+    """-m/$YT_SUM_MODEL override, else the filtered free chat list.
+
+    Returns (models, how): models is the ordered list of candidates to try
+    (first is preferred; later ones are automatic failover targets).
+    """
+    explicit = cli_model or os.environ.get("YT_SUM_MODEL")
+    if explicit:
+        return [explicit], "explicit override"
     try:
         free = fetch_free_models(api_url)
         if free:
-            return free[0]["id"], "auto (best free chat model by context)"
+            ids = [m["id"] for m in free]
+            return ids, f"auto (filtered free chat list, {len(ids)} models)"
     except Exception as e:
         print(f"  note: could not fetch free model list ({e}); "
               "falling back to openrouter/free", file=sys.stderr)
-    return "openrouter/free", "router fallback"
+    return ["openrouter/free"], "last-resort router"
 
 
 # ---------------------------------------------------------------------------
@@ -231,7 +236,23 @@ def clean_vtt(path):
 # ---------------------------------------------------------------------------
 # OpenRouter
 # ---------------------------------------------------------------------------
+_MODEL_ERR_HINTS = (
+    "model", "provider", "does not exist", "not found", "unavailable",
+    "not available", "not supported",
+)
+
+
+def _is_model_error(code, errmsg):
+    """True if this error means 'this model can't be used right now'."""
+    if code in (400, 404):
+        low = (errmsg or "").lower()
+        return any(h in low for h in _MODEL_ERR_HINTS)
+    return False
+
+
 def call_api(api_url, model, max_tokens, key, sys_prompt, user_prompt):
+    """One chat completion for ONE model. Raises classified ApiError on
+    failure so the caller can fail over to another model."""
     body = json.dumps({
         "model": model,
         "max_tokens": max_tokens,
@@ -262,20 +283,27 @@ def call_api(api_url, model, max_tokens, key, sys_prompt, user_prompt):
                 errmsg = (err.get("error") or {}).get("message", "unknown")
             except Exception:
                 pass
+            if _is_model_error(e.code, errmsg):
+                raise ModelUnavailable(
+                    f"HTTP {e.code}: {errmsg}") from e
+            if e.code in (401, 403, 402):
+                raise FatalApiError(f"HTTP {e.code}: {errmsg}") from e
             retryable = e.code == 429 or e.code >= 500
-            if retryable and attempt < 4:
+            if retryable and attempt < 3:
                 print(f"  openrouter: HTTP {e.code} — retrying in {3 * attempt}s "
                       f"({errmsg})", file=sys.stderr)
                 time.sleep(3 * attempt)
                 continue
-            raise RuntimeError(f"OpenRouter API HTTP {e.code}: {errmsg}")
+            if retryable:
+                raise TransientApiError(f"HTTP {e.code}: {errmsg}") from e
+            raise FatalApiError(f"HTTP {e.code}: {errmsg}") from e
         except urllib.error.URLError as e:
-            if attempt < 4:
+            if attempt < 3:
                 print(f"  openrouter: network error ({e.reason}) — retrying in "
                       f"{3 * attempt}s", file=sys.stderr)
                 time.sleep(3 * attempt)
                 continue
-            raise RuntimeError(f"OpenRouter API unreachable: {e.reason}")
+            raise TransientApiError(f"network error: {e.reason}") from e
     choice = (data.get("choices") or [{}])[0] or {}
     content = (choice.get("message") or {}).get("content") or ""
     model_used = data.get("model", "")
@@ -289,6 +317,23 @@ def call_api(api_url, model, max_tokens, key, sys_prompt, user_prompt):
     if not content:
         print("  warning: empty assistant response", file=sys.stderr)
     return content
+
+
+def call_with_failover(cfg, key, sys_prompt, user_prompt):
+    """Try each candidate model in order until one succeeds."""
+    errors = []
+    for model in cfg.models:
+        try:
+            return call_api(cfg.api_url, model, cfg.max_tokens, key,
+                            sys_prompt, user_prompt)
+        except FatalApiError:
+            raise
+        except ApiError as e:
+            errors.append(f"{model}: {e}")
+            print(f"  ⤷ {model} failed ({e}); trying next free model...",
+                  file=sys.stderr)
+    raise RuntimeError("all candidate models failed:\n  "
+                       + "\n  ".join(errors))
 
 
 # ---------------------------------------------------------------------------
@@ -323,8 +368,7 @@ def summarize_transcript(cfg, key, title, uploader, duration, transcript):
                 '"## Key Points" as deduplicated bullets that keep names, '
                 'numbers and terms, then optional "## Notable Details", then '
                 '"## Bottom Line" (1-2 sentences). Use Markdown.')
-        return call_api(cfg.api_url, cfg.model, cfg.max_tokens, key,
-                        SYS_PROMPT, user)
+        return call_with_failover(cfg, key, SYS_PROMPT, user)
 
     # map phase
     parts = []
@@ -335,8 +379,7 @@ def summarize_transcript(cfg, key, title, uploader, duration, transcript):
                 f"{chunk}\n\nSummarize THIS PART in concise bullet points: "
                 "key topics, names, numbers and conclusions. Be thorough but "
                 "do not add outside information.")
-        part = call_api(cfg.api_url, cfg.model, cfg.max_tokens, key,
-                        SYS_PROMPT, user)
+        part = call_with_failover(cfg, key, SYS_PROMPT, user)
         parts.append(f"[{i}/{n}] {part}")
 
     # reduce phase
@@ -346,7 +389,7 @@ def summarize_transcript(cfg, key, title, uploader, duration, transcript):
             'a 2-3 sentence TL;DR, then "## Key Points" as deduplicated '
             'bullets that keep specifics, then optional "## Notable Details", '
             'then "## Bottom Line" (1-2 sentences). Use Markdown.')
-    return call_api(cfg.api_url, cfg.model, cfg.max_tokens, key, SYS_PROMPT, user)
+    return call_with_failover(cfg, key, SYS_PROMPT, user)
 
 
 # ---------------------------------------------------------------------------
@@ -367,32 +410,17 @@ def main():
             print("no free chat models found on OpenRouter right now",
                   file=sys.stderr)
             sys.exit(1)
-        cur = saved_default_model()
         rec = free[0]
-        print("Free chat models on OpenRouter (sorted by context length):")
+        print("Free chat models OpenRouter auto-picks from (by context length):")
         for m in free:
-            tag = ""
-            if m["id"] == cur:
-                tag = "  <- saved default"
-            elif m["id"] == rec["id"] and cur is None:
-                tag = "  <- recommended (auto default)"
+            tag = "  <- preferred (largest context)" if m["id"] == rec["id"] else ""
             print(f"  {m['context_length']:>8}  {m['id']}{tag}")
         print()
-        print("  use:      yt-summarize -m <id> URL")
-        print("  set once: yt-summarize --set-model <id>")
-        print(f"  default file: {MODEL_FILE}")
-        return 0
-
-    if cfg.set_model:
-        model_id = cfg.set_model.strip()
-        if not model_id:
-            print("error: empty model id", file=sys.stderr)
-            sys.exit(2)
-        os.makedirs(os.path.dirname(MODEL_FILE), exist_ok=True)
-        with open(MODEL_FILE, "w", encoding="utf-8") as f:
-            f.write(model_id + "\n")
-        print(f"saved default model: {model_id}")
-        print(f"  ({MODEL_FILE})")
+        print("  the script always auto-picks from this list and fails over "
+              "to the next")
+        print("  model automatically if one becomes unavailable — nothing to "
+              "maintain.")
+        print("  optional one-off override: yt-summarize -m <id> URL")
         return 0
 
     if not cfg.urls:
@@ -425,8 +453,10 @@ def main():
         print("  get a free key: https://openrouter.ai/keys", file=sys.stderr)
         sys.exit(2)
 
-    cfg.model, how = resolve_model(cfg.api_url, cfg.model)
-    print(f"model: {cfg.model} [{how}]", file=sys.stderr)
+    cfg.models, how = resolve_models(cfg.api_url, cfg.model)
+    extra = f" (+{len(cfg.models) - 1} failover candidates)" \
+        if len(cfg.models) > 1 else ""
+    print(f"model: {cfg.models[0]} [{how}]{extra}", file=sys.stderr)
 
     for url in cfg.urls:
         print(f"== {url}", file=sys.stderr)
@@ -452,7 +482,7 @@ def main():
 
         try:
             print(summarize_transcript(cfg, key, title, uploader, duration, transcript))
-        except RuntimeError as e:
+        except (RuntimeError, ApiError) as e:
             print(f"error: {e}", file=sys.stderr)
         print(file=sys.stderr)
 
