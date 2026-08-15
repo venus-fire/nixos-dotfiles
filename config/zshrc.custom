@@ -8,6 +8,15 @@
 # -----------------------------------------------------------------------------
 # ENVIRONMENT VARIABLES
 # -----------------------------------------------------------------------------
+# OpenRouter API key — loaded from a secrets file OUTSIDE the dotfiles repo
+# (the key itself must never be committed). One-time setup:
+#   mkdir -p ~/.config/openrouter
+#   printf '%s\n' 'sk-or-v1-...' > ~/.config/openrouter/key
+#   chmod 600 ~/.config/openrouter/key
+if [ -z "${OPENROUTER_API_KEY:-}" ] && [ -r "$HOME/.config/openrouter/key" ]; then
+    export OPENROUTER_API_KEY="$(cat "$HOME/.config/openrouter/key")"
+fi
+
 # Ollama local LLM configuration
 export OLLAMA_BASE_URL="http://localhost:11434/v1"
 export OLLAMA_MODEL="qwen2.5-coder:1.5b"

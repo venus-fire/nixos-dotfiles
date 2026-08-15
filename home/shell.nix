@@ -9,6 +9,8 @@
       flake-update = "~/Documents/nixos-dotfiles/scripts/flake-update.sh";
       # snapshot noctalia Settings UI state into the repo — see scripts/noctalia-backup.sh
       noctalia-backup = "~/Documents/nixos-dotfiles/scripts/noctalia-backup.sh";
+      # yt-dlp captions -> OpenRouter free-model summary — see scripts/yt-summarize.sh
+      yt-summarize = "~/Documents/nixos-dotfiles/scripts/yt-summarize.sh";
     };
 
     # Zsh plugins — enabled declaratively, Home Manager handles the sourcing

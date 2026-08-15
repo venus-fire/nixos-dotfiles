@@ -66,6 +66,7 @@ in
     mpv                               # video player
     ffmpeg                            # media converter
     yt-dlp                            # media downloader
+    python3                           # runtime for scripts/yt-summarize.sh
 
     # --- Productivity ---
     keepassxc                         # password manager
@@ -76,6 +77,7 @@ in
     # --- Development tools ---
     hermes                            # CLI AI agent (Nous Research)
     gh                                # GitHub CLI
+    pi-coding-agent
 
     # --- Gaming ---
     gamescope                         # micro-compositor for running games isolated
