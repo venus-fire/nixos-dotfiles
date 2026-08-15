@@ -13,18 +13,20 @@
 #   1. yt-dlp downloads the video's subtitles (manual captions preferred,
 #      auto-generated ASR fallback) as VTT into a temp dir.
 #   2. The VTT is cleaned (timestamps, tags, HTML entities) to plain text.
-#   3. Transcripts longer than YT_SUM_CHUNK chars are split into chunks; each
-#      chunk is summarized ("map"), then the part-summaries are combined into
-#      one final summary ("reduce").
+#   3. Chunking is context-aware: the chunk size is auto-sized from the
+#      preferred model's context window, so a transcript is only chunked
+#      (map then reduce) when it truly exceeds what the model can take in one
+#      call. Override with -c or $YT_SUM_CHUNK.
 #   4. Model selection — always automatic, nothing to maintain:
 #      fetch OpenRouter's free (:free) model list, filter OUT non-chat models
 #      (safety/classifier/embedding/audio/transcription — the plain
 #      "openrouter/free" router does NOT filter and can land on e.g.
-#      nvidia/nemotron-3.5-content-safety:free), sort by context length, and
-#      use the best one. If a model becomes unavailable (free models rotate),
-#      the next model in the list is tried automatically. Only if the whole
-#      list fails is "openrouter/free" used as a last-resort router.
-#      Optional one-off override with -m or $YT_SUM_MODEL (no file to edit).
+#      nvidia/nemotron-3.5-content-safety:free), then rank for FAST MIDRANGE
+#      summarization: preferred context sweet spot 128k-262k, non-reasoning,
+#      small active params first; giant 500B+/1M-context models sink to the
+#      bottom of the failover list. If a model becomes unavailable (free
+#      models rotate), the next one is tried automatically; "openrouter/free"
+#      is only a last resort. Optional one-off override with -m/$YT_SUM_MODEL.
 #
 # Requirements (declared in the dotfiles repo):
 #   yt-dlp  (modules/packages.nix)
@@ -43,7 +45,7 @@
 #   OPENROUTER_KEY_FILE  key file (default: ~/.config/openrouter/key)
 #   YT_SUM_MODEL         one-off model override (same as -m; otherwise auto)
 #   YT_SUM_LANG          subtitle language (default: en)
-#   YT_SUM_CHUNK         max chars per map chunk (default: 60000)
+#   YT_SUM_CHUNK         max chars per chunk (default: auto from model context)
 #   YT_SUM_MAX_TOKENS    max completion tokens per call (default: 4096)
 #   YT_SUM_API_URL       API base URL (default: https://openrouter.ai/api/v1)
 # =============================================================================
@@ -88,8 +90,9 @@ def parse_args():
     p.add_argument("--list-models", action="store_true",
                    help="list the free chat models the script auto-picks from")
     p.add_argument("-c", "--chunk", type=int,
-                   default=int(os.environ.get("YT_SUM_CHUNK", "60000")),
-                   help="max chars per map chunk (default: 60000)")
+                   default=int(os.environ.get("YT_SUM_CHUNK") or 0) or None,
+                   help="max chars per chunk (default: auto-sized to the "
+                        "selected model's context — only chunks when needed)")
     p.add_argument("-t", "--max-tokens", type=int,
                    default=int(os.environ.get("YT_SUM_MAX_TOKENS", "4096")),
                    help="max completion tokens per call (default: 4096)")
@@ -123,8 +126,49 @@ def is_chat_model(model_id):
     return not any(h in model_id.lower() for h in _NON_CHAT_HINTS)
 
 
+# --- model ranking: prefer FAST MIDRANGE models -----------------------------
+# Free models rotate, so this is heuristic, not a hardcoded list:
+#   * context sweet spot 128k-262k (fits any transcript; giant-context MoEs
+#     like the 550B/1M nemotron are slow and overkill for a summary)
+#   * non-reasoning models (reasoning = extra thinking latency)
+#   * smaller active parameter count (parsed from "aXXb" MoE ids, else XXb)
+_SWEET_MIN_CTX = 131072
+_SWEET_MAX_CTX = 262144
+_GIANT_CTX = 512000
+_REASONING_HINTS = ("reasoning", "thinking", "-r1-", "deepseek")
+
+
+def _active_size_b(model_id, name):
+    """Active params in billions (MoE 'aXXb'), else total 'XXb', else inf."""
+    text = f"{model_id} {name}".lower()
+    m = re.search(r"a(\d+(?:\.\d+)?)\s*b", text)
+    if m:
+        return float(m.group(1))
+    m = re.search(r"(^|[\-_.\s/])(\d+(?:\.\d+)?)\s*b", text)
+    if m:
+        return float(m.group(2))
+    return float("inf")
+
+
+def _model_score(m):
+    """Higher = better default pick. Context band dominates; reasoning and
+    size are tie-breaks inside a band."""
+    ctx = m["context_length"]
+    if ctx > _GIANT_CTX:
+        base = 15.0                                   # giant 500B+/1M: last resort
+    elif ctx > _SWEET_MAX_CTX:
+        base = 60.0 + (ctx - _SWEET_MAX_CTX) / (_GIANT_CTX - _SWEET_MAX_CTX) * 20.0
+    elif ctx >= _SWEET_MIN_CTX:
+        base = 100.0 + (ctx - _SWEET_MIN_CTX) / (_SWEET_MAX_CTX - _SWEET_MIN_CTX) * 50.0
+    else:
+        base = 30.0 + ctx / _SWEET_MIN_CTX * 30.0     # <128k: works, needs chunking
+    if any(h in m["id"].lower() for h in _REASONING_HINTS):
+        base -= 0.5
+    return base
+
+
 def fetch_free_models(api_url):
-    """Free (:free) chat-capable models, sorted by context length desc."""
+    """Free (:free) chat-capable models, ranked for fast summarization."""
     req = urllib.request.Request(
         f"{api_url}/models", headers={"User-Agent": "yt-summarize"})
     with urllib.request.urlopen(req, timeout=30) as resp:
@@ -139,7 +183,7 @@ def fetch_free_models(api_url):
             "context_length": m.get("context_length") or 0,
             "name": m.get("name") or mid,
         })
-    models.sort(key=lambda m: (-m["context_length"], m["id"]))
+    models.sort(key=lambda m: (-_model_score(m), _active_size_b(m["id"], m["name"]), m["id"]))
     return models
 
 
@@ -160,23 +204,65 @@ class TransientApiError(ApiError):
 
 
 def resolve_models(api_url, cli_model):
-    """-m/$YT_SUM_MODEL override, else the filtered free chat list.
+    """-m/$YT_SUM_MODEL override, else the ranked free chat list.
 
-    Returns (models, how): models is the ordered list of candidates to try
-    (first is preferred; later ones are automatic failover targets).
+    Returns (models, how, models_ctx): models is the ordered list of
+    candidates to try (first is preferred; later ones are automatic failover
+    targets); models_ctx maps model id -> context_length (None if unknown).
     """
     explicit = cli_model or os.environ.get("YT_SUM_MODEL")
     if explicit:
-        return [explicit], "explicit override"
+        ctx = model_context(api_url, explicit)
+        return [explicit], "explicit override", {explicit: ctx}
     try:
         free = fetch_free_models(api_url)
         if free:
             ids = [m["id"] for m in free]
-            return ids, f"auto (filtered free chat list, {len(ids)} models)"
+            ctx = {m["id"]: m["context_length"] for m in free}
+            return ids, f"auto (ranked free chat list, {len(ids)} models)", ctx
     except Exception as e:
         print(f"  note: could not fetch free model list ({e}); "
               "falling back to openrouter/free", file=sys.stderr)
-    return ["openrouter/free"], "last-resort router"
+    return ["openrouter/free"], "last-resort router", {"openrouter/free": None}
+
+
+def model_context(api_url, model_id):
+    """Context length for any model id, or None if not found."""
+    try:
+        req = urllib.request.Request(
+            f"{api_url}/models", headers={"User-Agent": "yt-summarize"})
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            data = json.load(resp)
+        for m in data.get("data", []):
+            if m.get("id") == model_id:
+                return m.get("context_length") or None
+    except Exception:
+        pass
+    return None
+
+
+# --- context-aware chunking ------------------------------------------------
+# Rough English token density: ~3.5 chars/token (conservative). Reserve space
+# for the answer (max_tokens) plus prompt overhead. Cap the chunk so even a
+# failover to a 128k model still fits (current smallest free model).
+_CHARS_PER_TOKEN = 3.5
+_MAX_CHUNK_CHARS = 200000      # ~57k tokens — fits every free model
+_MIN_CHUNK_CHARS = 8000
+
+
+def compute_chunk_size(cfg):
+    """Auto chunk size from the preferred model's context window.
+
+    Returns None when the model's context is unknown (caller falls back to a
+    conservative fixed size); otherwise the max chars per chunk.
+    """
+    ctx = None
+    if cfg.models and cfg.models_ctx:
+        ctx = cfg.models_ctx.get(cfg.models[0])
+    if not ctx:
+        return None
+    size = int((ctx - cfg.max_tokens - 2048) * _CHARS_PER_TOKEN)
+    return max(_MIN_CHUNK_CHARS, min(size, _MAX_CHUNK_CHARS))
 
 
 # ---------------------------------------------------------------------------
@@ -238,7 +324,7 @@ def clean_vtt(path):
 # ---------------------------------------------------------------------------
 _MODEL_ERR_HINTS = (
     "model", "provider", "does not exist", "not found", "unavailable",
-    "not available", "not supported",
+    "not available", "not supported", "context", "too long", "exceeds",
 )
 
 
@@ -252,7 +338,8 @@ def _is_model_error(code, errmsg):
 
 def call_api(api_url, model, max_tokens, key, sys_prompt, user_prompt):
     """One chat completion for ONE model. Raises classified ApiError on
-    failure so the caller can fail over to another model."""
+    failure so the caller can fail over to another model. max_tokens is the
+    answer budget (input capacity is handled by chunk sizing)."""
     body = json.dumps({
         "model": model,
         "max_tokens": max_tokens,
@@ -319,12 +406,13 @@ def call_api(api_url, model, max_tokens, key, sys_prompt, user_prompt):
     return content
 
 
-def call_with_failover(cfg, key, sys_prompt, user_prompt):
+def call_with_failover(cfg, key, sys_prompt, user_prompt, max_tokens=None):
     """Try each candidate model in order until one succeeds."""
+    tokens = max_tokens or cfg.max_tokens
     errors = []
     for model in cfg.models:
         try:
-            return call_api(cfg.api_url, model, cfg.max_tokens, key,
+            return call_api(cfg.api_url, model, tokens, key,
                             sys_prompt, user_prompt)
         except FatalApiError:
             raise
@@ -354,13 +442,22 @@ def chunk_text(text, max_chars):
 
 
 def summarize_transcript(cfg, key, title, uploader, duration, transcript):
-    chunks = chunk_text(transcript, cfg.chunk)
+    # chunk size: explicit -c/YT_SUM_CHUNK wins, else auto from the chosen
+    # model's context. chunk_text() only splits when the transcript exceeds it,
+    # so a typical video is a single call.
+    chunk_size = cfg.chunk or cfg.chunk_size or 60000
+    chunks = chunk_text(transcript, chunk_size)
     n = len(chunks)
     if n == 0:
         raise RuntimeError("empty transcript")
 
     def video_hdr():
         return f"Video: {title}\nChannel: {uploader}\nDuration: {duration}"
+
+    ctx = cfg.models_ctx.get(cfg.models[0]) if cfg.models_ctx else None
+    print(f"  transcript: {len(transcript)} chars | model context: "
+          f"{ctx or 'unknown'} | chunk size: {chunk_size} chars"
+          + (f" | {n} part(s)" if n > 1 else ""), file=sys.stderr)
 
     if n == 1:
         user = (f"{video_hdr()}\n\nFull transcript:\n\n{transcript}\n\n"
@@ -370,7 +467,9 @@ def summarize_transcript(cfg, key, title, uploader, duration, transcript):
                 '"## Bottom Line" (1-2 sentences). Use Markdown.')
         return call_with_failover(cfg, key, SYS_PROMPT, user)
 
-    # map phase
+    # map phase — keep each part summary short so the reduce call also fits
+    # the model's context (parts feed back in as input).
+    part_tokens = min(cfg.max_tokens, 2048)
     parts = []
     for i, chunk in enumerate(chunks, 1):
         print(f"  summarizing part {i}/{n} ({len(chunk)} chars)...",
@@ -379,7 +478,8 @@ def summarize_transcript(cfg, key, title, uploader, duration, transcript):
                 f"{chunk}\n\nSummarize THIS PART in concise bullet points: "
                 "key topics, names, numbers and conclusions. Be thorough but "
                 "do not add outside information.")
-        part = call_with_failover(cfg, key, SYS_PROMPT, user)
+        part = call_with_failover(cfg, key, SYS_PROMPT, user,
+                                  max_tokens=part_tokens)
         parts.append(f"[{i}/{n}] {part}")
 
     # reduce phase
@@ -411,22 +511,22 @@ def main():
                   file=sys.stderr)
             sys.exit(1)
         rec = free[0]
-        print("Free chat models OpenRouter auto-picks from (by context length):")
+        print("Free chat models OpenRouter auto-picks from "
+              "(ranked for fast summarization):")
         for m in free:
-            tag = "  <- preferred (largest context)" if m["id"] == rec["id"] else ""
+            tag = "  <- preferred (fast midrange)" if m["id"] == rec["id"] else ""
             print(f"  {m['context_length']:>8}  {m['id']}{tag}")
         print()
-        print("  the script always auto-picks from this list and fails over "
-              "to the next")
-        print("  model automatically if one becomes unavailable — nothing to "
-              "maintain.")
+        print("  ranking: context sweet spot 128k-262k, non-reasoning, small ")
+        print("  active params first; giant 500B+/1M-context models are only ")
+        print("  failover. Auto fails over to the next if one is unavailable.")
         print("  optional one-off override: yt-summarize -m <id> URL")
         return 0
 
     if not cfg.urls:
         print("error: no URL given (try -h, or --list-models)", file=sys.stderr)
         sys.exit(2)
-    if cfg.chunk < 1:
+    if cfg.chunk is not None and cfg.chunk < 1:
         print("error: invalid chunk size", file=sys.stderr)
         sys.exit(2)
     if cfg.max_tokens < 1:
@@ -453,10 +553,12 @@ def main():
         print("  get a free key: https://openrouter.ai/keys", file=sys.stderr)
         sys.exit(2)
 
-    cfg.models, how = resolve_models(cfg.api_url, cfg.model)
+    cfg.models, how, cfg.models_ctx = resolve_models(cfg.api_url, cfg.model)
+    cfg.chunk_size = compute_chunk_size(cfg)
     extra = f" (+{len(cfg.models) - 1} failover candidates)" \
         if len(cfg.models) > 1 else ""
-    print(f"model: {cfg.models[0]} [{how}]{extra}", file=sys.stderr)
+    cs = f", chunk {cfg.chunk_size or 60000} chars" if not cfg.chunk else ""
+    print(f"model: {cfg.models[0]} [{how}]{extra}{cs}", file=sys.stderr)
 
     for url in cfg.urls:
         print(f"== {url}", file=sys.stderr)
