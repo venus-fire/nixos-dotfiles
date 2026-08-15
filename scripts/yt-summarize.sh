@@ -667,7 +667,6 @@ def main():
             print(f"error: {cfg.lang} subtitles exist but cleaned transcript is empty",
                   file=sys.stderr)
             continue
-        print(f"  transcript: {len(transcript)} chars", file=sys.stderr)
 
         try:
             print(render_markdown(
