@@ -395,14 +395,25 @@ def call_api(api_url, model, max_tokens, key, sys_prompt, user_prompt):
     content = (choice.get("message") or {}).get("content") or ""
     model_used = data.get("model", "")
     total = ((data.get("usage") or {}).get("total_tokens") or "")
+    # A 200 response can still carry an error field or an EMPTY completion
+    # (provider hiccup, silent rate limit). Treat both as transient failures
+    # so the failover loop tries the next model instead of printing an empty
+    # summary.
+    if data.get("error"):
+        err = data["error"]
+        errmsg = (err.get("message") if isinstance(err, dict) else str(err)) \
+            or "provider error"
+        if any(h in errmsg.lower() for h in _MODEL_ERR_HINTS):
+            raise ModelUnavailable(f"HTTP 200: {errmsg}")
+        raise TransientApiError(f"HTTP 200: {errmsg}")
+    if not content:
+        raise TransientApiError("empty assistant response")
     if model_used:
         print(f"  ↳ resolved model: {model_used}"
               + (f" ({total} tokens)" if total else ""), file=sys.stderr)
         if not is_chat_model(model_used):
             print(f"  ⚠ that model is not a chat/summarization model — run "
                   f"--list-models and pick a chat model with -m", file=sys.stderr)
-    if not content:
-        print("  warning: empty assistant response", file=sys.stderr)
     return content
 
 
