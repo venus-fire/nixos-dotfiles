@@ -12,7 +12,7 @@
 #   - lid-close script                  → now in modules/power.nix (power mgmt)
 # =============================================================================
 
-{ pkgs, inputs, pkgs-unstable, ... }:
+{ pkgs, inputs, pkgs-unstable, lib, ... }:
 
 let
   # Hermes Agent with Exa web search SDK baked in at build time.
@@ -87,10 +87,32 @@ in
     wget
     lmstudio                          # local LLM GUI
 
+    # --- Authentication ---
+    openssh-askpass                   # GTK GUI askpass for sudo -A / ssh prompts
+
     # --- Unstable packages ---
     pkgs-unstable.handy               # speech-to-text transcription (nixos-unstable)
     pkgs-unstable.fetch               # system info fetcher (like neofetch, nixos-unstable)
   ];
+
+  # ---------------------------------------------------------------------------
+  # GUI ASKPASS — GTK password dialog for sudo (-A) and ssh prompts
+  # ---------------------------------------------------------------------------
+  # openssh-askpass ships libexec/gtk-ssh-askpass, a small GTK3 dialog that
+  # fits the GNOME-flavoured auth stack (gcr-ssh-agent, gnome-keyring) and
+  # runs natively under Wayland (niri). Noctalia v5 already provides its own
+  # polkit agent, so this only covers sudo/ssh passphrase prompts.
+  environment.sessionVariables = {
+    # sudo -A uses this (aliased in home/shell.nix)
+    SUDO_ASKPASS = "${pkgs.openssh-askpass}/libexec/gtk-ssh-askpass";
+    # ssh uses this for passphrase prompts; REQUIRE=force makes ssh use the
+    # GUI dialog even when a terminal is available.
+    SSH_ASKPASS_REQUIRE = "force";
+  };
+
+  # programs.ssh pre-defines environment.variables.SSH_ASKPASS="" (normal
+  # priority) — mkForce here beats it so ssh actually uses the GUI dialog.
+  environment.variables.SSH_ASKPASS = lib.mkForce "${pkgs.openssh-askpass}/libexec/gtk-ssh-askpass";
 
   # ---------------------------------------------------------------------------
   # DESKTOP PORTAL — backend for opening files (yazi, xdg-open)

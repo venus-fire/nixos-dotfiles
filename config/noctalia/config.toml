@@ -10,3 +10,35 @@
 # into config/noctalia/settings.toml with: noctalia-backup
 #
 # Reference: https://docs.noctalia.dev/v5
+
+# --- Firefox (Noctalia community template, local dev copy) ---
+# CSS-only Firefox theming via userChrome.css / userContent.css.
+# Files: /home/venus/noctalia-firefox-template/
+# Remove this block once the template is merged upstream and enabled via
+# Settings -> Templates -> Browse Templates -> firefox.
+[theme.templates.user.firefox_chrome]
+input_path = "/home/venus/noctalia-firefox-template/firefox-userChrome.css"
+output_path = "$XDG_CACHE_HOME/noctalia/firefox/firefox-userChrome.css"
+post_hook = "bash /home/venus/noctalia-firefox-template/apply.sh"
+
+[theme.templates.user.firefox_content]
+input_path = "/home/venus/noctalia-firefox-template/firefox-userContent.css"
+output_path = "$XDG_CACHE_HOME/noctalia/firefox/firefox-userContent.css"
+post_hook = "bash /home/venus/noctalia-firefox-template/apply.sh"
+
+# --- LibreWolf (Noctalia community template, local dev copy) ---
+[theme.templates.user.librewolf_chrome]
+input_path = "/home/venus/noctalia-templates/librewolf/librewolf-userChrome.css"
+output_path = "$XDG_CACHE_HOME/noctalia/librewolf/librewolf-userChrome.css"
+post_hook = "bash /home/venus/noctalia-templates/librewolf/apply.sh"
+
+[theme.templates.user.librewolf_content]
+input_path = "/home/venus/noctalia-templates/librewolf/librewolf-userContent.css"
+output_path = "$XDG_CACHE_HOME/noctalia/librewolf/librewolf-userContent.css"
+post_hook = "bash /home/venus/noctalia-templates/librewolf/apply.sh"
+
+# --- Ungoogled Chromium (Noctalia community template, local dev copy) ---
+[theme.templates.user.ungoogled_chromium]
+input_path = "/home/venus/noctalia-templates/ungoogled-chromium/manifest.json"
+output_path = "$XDG_CACHE_HOME/noctalia/ungoogled-chromium/theme/manifest.json"
+post_hook = "bash /home/venus/noctalia-templates/ungoogled-chromium/apply.sh"

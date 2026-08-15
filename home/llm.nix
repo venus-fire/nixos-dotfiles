@@ -13,9 +13,15 @@
   #   prompt, 9.7 tok/s gen), but 1.5B is weak for complex coding.
   # Candidate 2: Qwen3.5-4B-Super-Coder Q4_0 — GDN hybrid, 1.2 tok/s prompt
   #   (GDN on CPU), unusably slow.
-  # Candidate 3 (current): LFM2.5-2.6B Q5_K_M — Liquid hybrid architecture,
-  #   7.4 tok/s prompt, 10.2 tok/s gen. Fast enough, 2.6B params.
-  #   The 30B MoE models were deleted from disk to free ~26 GB.
+  # Candidate 3: LFM2.5-2.6B Q5_K_M — Liquid hybrid, 7.4/10.2 tok/s, decent.
+  # Candidate 4: MiniCPM5-1B-Claude-Opus-Fable5-V2-Thinking Q8_0 —
+  #   Llama architecture, 67.7/15.5 tok/s. Thinking built in. Works but
+  #   user issues with it.
+  # Candidate 5: MiniCPM5-1B-Agentic-Tooluse-v3 Q8_0 — kept thinking
+  #   endlessly instead of answering.
+  # Candidate 6 (current): LFM2.5-1.2B-Nova-Function-Calling Q5_K_M —
+  #   Liquid architecture, fine-tuned for function calling. No thinking
+  #   mode. 17.6 tok/s prompt, 22.9 tok/s gen.
   #
   # Previous MoE/crash history preserved below for reference:
   #
@@ -59,29 +65,27 @@
   # little-coder's default port 8888.
   xdg.configFile."little-coder/models.json".source = ../config/little-coder/models.json;
 
-  # Serve the LFM2.5-2.6B Q5_K_M on 127.0.0.1:8888 with the Vulkan
-  # backend. Liquid hybrid architecture — runs well on this laptop's Intel
-  # Iris Plus iGPU (7.4 tok/s prompt, 10.2 tok/s gen). Uses a thinking/
-  # reasoning mode (reasoning_content in responses). --reasoning off
-  # disables the thinking phase so it answers directly (faster, shorter).
-  #   - -ngl 99: offload all layers (1.81 GB Q5_K_M, fits easily)
+  # Serve the LFM2.5-1.2B-Nova-Function-Calling Q5_K_M on 127.0.0.1:8888
+  # with the Vulkan backend. Liquid hybrid architecture (conv + attention).
+  # Fine-tuned for function calling (ChatML format, JSON output). No
+  # thinking/reasoning mode. 17.6 tok/s prompt, 22.9 tok/s gen.
+  #   - -ngl 99: offload all layers (0.79 GB Q5_K_M, tiny)
   #   - -c 32768: 32K context
   #   - --flash-attn on: beneficial
   #   - -np 1: single slot
-  #   - --cache-ram 1024: 1G prompt-cache budget
-  #   - --reasoning off: no thinking tokens
+  #   - --cache-ram 512: small prompt-cache budget
   # User service so it has GPU access and the model path under /home/venus.
   systemd.user.services.llama-server = {
     Unit = {
-      Description = "llama-server (mainline llama.cpp, Vulkan) — LFM2.5-2.6B Q5_K_M";
+      Description = "llama-server (mainline llama.cpp, Vulkan) — LFM2.5-1.2B-Nova-Function-Calling Q5_K_M";
       After = [ "graphical-session.target" ];
       PartOf = [ "graphical-session.target" ];
     };
     Service = {
       ExecStart = lib.concatStringsSep " " [
         "${pkgs-unstable.llama-cpp-vulkan}/bin/llama-server"
-        "-m /home/venus/models/LFM2.5-2.6B-Q5_K_M.gguf"
-        "--host 127.0.0.1 --port 8888 -c 32768 --jinja -ngl 99 -np 1 --flash-attn on --cache-ram 1024 --reasoning off"
+        "-m /home/venus/models/LFM2.5-1.2B-Nova-Function-Calling.Q5_K_M.gguf"
+        "--host 127.0.0.1 --port 8888 -c 32768 --jinja -ngl 99 -np 1 --flash-attn on --cache-ram 512"
       ];
       Restart = "on-failure";
       RestartSec = "5";
