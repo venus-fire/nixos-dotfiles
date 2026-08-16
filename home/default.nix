@@ -14,5 +14,6 @@
     ./nicotine.nix           # Nicotine+ with AirVPN WireGuard binding
     ./llm.nix                # little-coder + mainline llama.cpp (Vulkan)
     ./prime-agent.nix        # prime-agent RLM coding agent + kernel env
+    ./himalaya.nix           # himalaya CLI email client (Gmail) + pass store
   ];
 }
