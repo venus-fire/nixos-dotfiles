@@ -32,11 +32,16 @@ set -euo pipefail
 KEY_FINGERPRINT="${GPG_KEY_FINGERPRINT:-}"
 
 if [[ -z "${KEY_FINGERPRINT}" ]]; then
-  # Pick the newest secret key that has an encryption-capable subkey.
-  KEY_FINGERPRINT=$(gpg --list-secret-keys --with-colons \
-    | awk -F: '$1=="fpr"{print $10}' | tail -1)
+  # The key that actually encrypts the pass store is recorded in
+  # ~/.password-store/.gpg-id. This is the definitive, unambiguous choice —
+  # far more reliable than guessing from the secret keyring (which can contain
+  # stale/broken keys that lack an encryption subkey and fail to export).
+  GID="${HOME}/.password-store/.gpg-id"
+  if [[ -f "${GID}" ]]; then
+    KEY_FINGERPRINT=$(tr -d ' \n' < "${GID}")
+  fi
   if [[ -z "${KEY_FINGERPRINT}" ]]; then
-    echo "error: could not auto-detect a GPG secret key" >&2
+    echo "error: could not read key from ${GID}" >&2
     echo "set GPG_KEY_FINGERPRINT=<fpr> and retry" >&2
     exit 1
   fi
@@ -52,12 +57,12 @@ gpg --batch --export-secret-keys "${KEY_FINGERPRINT}" \
     > "${DEST}/mail-secrets-private.asc"
 
 echo "==> Verifying the private key exported with secret material"
-if ! gpg --list-secret-keys --with-colons "${DEST}/mail-secrets-private.asc" \
-    | grep -q '^sec:'; then
+if ! gpg --list-packets "${DEST}/mail-secrets-private.asc" 2>/dev/null \
+    | grep -q ':secret key packet:'; then
   echo "error: private key export did not contain secret material" >&2
   exit 1
 else
-  echo "    OK: secret key present in private export"
+  echo "    OK: secret key packet present in the private export"
 fi
 
 echo "==> Archiving the pass store (~/.password-store)"
