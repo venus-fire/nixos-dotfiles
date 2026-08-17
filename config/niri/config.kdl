@@ -310,12 +310,129 @@ screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
 // Animation settings.
 // The wiki explains how to configure individual animations:
 // https://niri-wm.github.io/niri/Configuration:-Animations
+
+// CRT "TV effect" window open/close, ported from Burn-My-Windows'
+// resources/shaders/tv.frag (GPL-3.0, Simon Schneegans) into niri's
+// custom-shader interface. Shut-off: window compresses to a horizontal
+// line, then a vertical line, then fades out. Opening reverses it.
+// NB: custom-shader has no backwards-compat guarantee from niri.
 animations {
     // Uncomment to turn off all animations.
     // off
 
     // Slow down all animations by this factor. Values below 1 speed them up instead.
     // slowdown 3.0
+
+    // Window close (CRT power-off).
+    window-close {
+        duration-ms 500
+        curve "linear"
+
+        custom-shader r"
+            // ease-out-quad, from B-M-W common.glsl.
+            float c_ease_out_quad(float x) {
+                return -x * (x - 2.0);
+            }
+
+            // Shared TV collapse render. prog goes 0 (full window) -> 1 (gone).
+            // coords_geo.xy is in [0..1] within window geometry.
+            vec4 tv_render(vec2 coords, float prog) {
+                const float BLUR_WIDTH = 0.01;  // width of the mask gradients
+                const float TB_TIME    = 0.7;   // rel. time top/bottom collapse
+                const float LR_TIME    = 0.4;   // rel. time left/right collapse
+                const float LR_DELAY   = 0.6;   // delay before left/right starts
+                const float FF_TIME    = 0.1;   // rel. time final fade
+                const float SCALING    = 0.5;   // vertical squash of the window
+
+                // Squash the window vertically toward its center.
+                float scale = 1.0 / mix(1.0, SCALING, prog) - 1.0;
+                coords.y    = coords.y * (scale + 1.0) - scale * 0.5;
+
+                float tbProg = smoothstep(0.0, 1.0, clamp(prog / TB_TIME, 0.0, 1.0));
+                float lrProg = smoothstep(0.0, 1.0, clamp((prog - LR_DELAY) / LR_TIME, 0.0, 1.0));
+                float ffProg = smoothstep(0.0, 1.0, clamp((prog - 1.0 + FF_TIME) / FF_TIME, 0.0, 1.0));
+
+                // Top-center-bottom gradient in [0..1..0].
+                float tb = coords.y * 2.0;
+                tb       = tb < 1.0 ? tb : 2.0 - tb;
+                // Left-center-right gradient in [0..1..0].
+                float lr = coords.x * 2.0;
+                lr       = lr < 1.0 ? lr : 2.0 - lr;
+
+                float tbMask = 1.0 - smoothstep(0.0, 1.0, clamp((tbProg - tb) / BLUR_WIDTH, 0.0, 1.0));
+                float lrMask = 1.0 - smoothstep(0.0, 1.0, clamp((lrProg - lr) / BLUR_WIDTH, 0.0, 1.0));
+                float ffMask = 1.0 - smoothstep(0.0, 1.0, ffProg);
+                float mask   = tbMask * lrMask * ffMask;
+
+                vec3 coords_tex = niri_geo_to_tex * vec3(coords, 1.0);
+                vec4 color = texture2D(niri_tex, coords_tex.st);
+
+                // Fade content to black (TV-off) as the animation progresses.
+                vec3 fill = vec3(0.0);
+                color.rgb = mix(color.rgb, fill * color.a, smoothstep(0.0, 1.0, prog));
+                color.a  *= mask;
+
+                return color;
+            }
+
+            vec4 close_color(vec3 coords_geo, vec3 size_geo) {
+                return tv_render(coords_geo.xy, c_ease_out_quad(niri_clamped_progress));
+            }
+        "
+    }
+
+    // Window open (CRT power-on, reversed timeline).
+    window-open {
+        duration-ms 500
+        curve "linear"
+
+        custom-shader r"
+            float c_ease_out_quad(float x) {
+                return -x * (x - 2.0);
+            }
+
+            vec4 tv_render(vec2 coords, float prog) {
+                const float BLUR_WIDTH = 0.01;
+                const float TB_TIME    = 0.7;
+                const float LR_TIME    = 0.4;
+                const float LR_DELAY   = 0.6;
+                const float FF_TIME    = 0.1;
+                const float SCALING    = 0.5;
+
+                float scale = 1.0 / mix(1.0, SCALING, prog) - 1.0;
+                coords.y    = coords.y * (scale + 1.0) - scale * 0.5;
+
+                float tbProg = smoothstep(0.0, 1.0, clamp(prog / TB_TIME, 0.0, 1.0));
+                float lrProg = smoothstep(0.0, 1.0, clamp((prog - LR_DELAY) / LR_TIME, 0.0, 1.0));
+                float ffProg = smoothstep(0.0, 1.0, clamp((prog - 1.0 + FF_TIME) / FF_TIME, 0.0, 1.0));
+
+                float tb = coords.y * 2.0;
+                tb       = tb < 1.0 ? tb : 2.0 - tb;
+                float lr = coords.x * 2.0;
+                lr       = lr < 1.0 ? lr : 2.0 - lr;
+
+                float tbMask = 1.0 - smoothstep(0.0, 1.0, clamp((tbProg - tb) / BLUR_WIDTH, 0.0, 1.0));
+                float lrMask = 1.0 - smoothstep(0.0, 1.0, clamp((lrProg - lr) / BLUR_WIDTH, 0.0, 1.0));
+                float ffMask = 1.0 - smoothstep(0.0, 1.0, ffProg);
+                float mask   = tbMask * lrMask * ffMask;
+
+                vec3 coords_tex = niri_geo_to_tex * vec3(coords, 1.0);
+                vec4 color = texture2D(niri_tex, coords_tex.st);
+
+                vec3 fill = vec3(0.0);
+                color.rgb = mix(color.rgb, fill * color.a, smoothstep(0.0, 1.0, prog));
+                color.a  *= mask;
+
+                return color;
+            }
+
+            vec4 open_color(vec3 coords_geo, vec3 size_geo) {
+                // Opening starts collapsed (prog=1) and expands (prog=0).
+                float prog = 1.0 - c_ease_out_quad(niri_clamped_progress);
+                return tv_render(coords_geo.xy, prog);
+            }
+        "
+    }
 }
 
 // Window rules let you adjust behavior for individual windows.
