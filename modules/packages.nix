@@ -88,6 +88,7 @@ in
     btop                              # system monitor
     wget
     lmstudio                          # local LLM GUI
+    trashy
 
     # --- Authentication ---
     openssh-askpass                   # GTK GUI askpass for sudo -A / ssh prompts
