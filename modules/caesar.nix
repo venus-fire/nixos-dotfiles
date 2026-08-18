@@ -158,7 +158,12 @@ in
           "UI_PORT=${toString cfg.uiPort}"
           "API_PORT=8090"
           "PATH=${pkgs.python3}/bin:${pkgs.nodejs}/bin:${pkgs.curl}/bin:${pkgs.git}/bin:${pkgs.gnutar}/bin:${pkgs.util-linux}/bin:${pkgs.lsof}/bin:${pkgs.ncurses}/bin:${pkgs.uv}/bin:/run/current-system/sw/bin"
-          "LD_LIBRARY_PATH=${pkgs.stdenv.cc.cc.lib}/lib"
+          # numpy (pip wheel, 2.5+) needs libz.so.1 (zlib) AND libstdc++.so.6
+          # (gcc) at load time; NixOS has no /usr/lib. Without zlib on the
+          # loader path the `chroma run` subprocess dies on
+          # "libz.so.1: cannot open shared object file" and every run fails
+          # with "Failed to start ChromaDB server".
+          "LD_LIBRARY_PATH=${pkgs.stdenv.cc.cc.lib}/lib:${pkgs.zlib}/lib"
         ];
 
         # Hardening. ProtectSystem=full read-onlys /usr,/boot,/etc; ${stateDir}
