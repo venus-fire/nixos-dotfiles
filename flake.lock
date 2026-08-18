@@ -1,21 +1,5 @@
 {
   "nodes": {
-    "caesar-agent": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1787021039,
-        "narHash": "sha256-dwvlU/mmM3H00u7Ok3jvTy1EcBu44hEhz7/rOgDJ/jU=",
-        "owner": "venus-fire",
-        "repo": "caesar-agent",
-        "rev": "dac98dc6fc78b00212a76b41ff0af58d54949bc0",
-        "type": "github"
-      },
-      "original": {
-        "owner": "venus-fire",
-        "repo": "caesar-agent",
-        "type": "github"
-      }
-    },
     "flake-parts": {
       "inputs": {
         "nixpkgs-lib": [
@@ -270,7 +254,6 @@
     },
     "root": {
       "inputs": {
-        "caesar-agent": "caesar-agent",
         "freenet-core": "freenet-core",
         "hardware-config": "hardware-config",
         "hermes-agent": "hermes-agent",

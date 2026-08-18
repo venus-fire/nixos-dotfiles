@@ -132,20 +132,6 @@
     nixpkgs-unstable.url = "nixpkgs/nixos-unstable";
 
     # -------------------------------------------------------------------------
-    # caesar-agent — the Caesar autonomous research agent (personal fork)
-    # -------------------------------------------------------------------------
-    # venus-fire/caesar-agent: jasonzliang/caesar-agent + Tavily web search +
-    # DeepSeek provider + local ONNX embeddings, wired into the presets. This
-    # input is `flake = false` because the repo ships no flake.nix — we consume
-    # the raw source tree (inputs.caesar-agent.outPath) and copy it into a
-    # writable state dir for the caesar-web service (see modules/caesar.nix).
-    # Tracks the fork's default branch; bump with `nix flake update`.
-    caesar-agent = {
-      url = "github:venus-fire/caesar-agent";
-      flake = false;
-    };
-
-    # -------------------------------------------------------------------------
     # hardware-config — THIS MACHINE's hardware configuration (path input)
     # -------------------------------------------------------------------------
     # NixOS generates /etc/nixos/hardware-configuration.nix on every fresh
