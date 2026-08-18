@@ -3,11 +3,11 @@
     "caesar-agent": {
       "flake": false,
       "locked": {
-        "lastModified": 1787018586,
-        "narHash": "sha256-AtEyFOtJMytIl5KqC432dacVrUSGguHX6D4369W3RN4=",
+        "lastModified": 1787021039,
+        "narHash": "sha256-dwvlU/mmM3H00u7Ok3jvTy1EcBu44hEhz7/rOgDJ/jU=",
         "owner": "venus-fire",
         "repo": "caesar-agent",
-        "rev": "5e852fb79c695b65a59f422ddedfa68ba2b97510",
+        "rev": "dac98dc6fc78b00212a76b41ff0af58d54949bc0",
         "type": "github"
       },
       "original": {
