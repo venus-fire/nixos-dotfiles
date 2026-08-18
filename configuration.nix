@@ -33,7 +33,11 @@
     ./modules/power.nix               # lid close, power management
     ./modules/i2pd.nix                # i2p anonymous overlay network
     ./modules/meshchatx.nix           # reticulum mesh chat web ui
+    ./modules/caesar.nix              # caesar deep-research web server
   ];
+
+  # Caesar: auto-start the deep-research web server as a system service.
+  services.caesar.enable = true;
 
   # ---- State version ----
   # DO NOT change after first install. Controls defaults for stateful data.
