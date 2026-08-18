@@ -246,6 +246,20 @@
         # than a separate file because it's tightly coupled to the flake
         # structure (it references ./home/default.nix by relative path).
         {
+
+          # ---- memlock for llama-server ----
+          # The llama-server user service mlock's the model weights into RAM
+          # (--load-mode mlock) so they never page to swap.  A systemd USER
+          # service cannot raise its own hard RLIMIT_MEMLOCK (that needs
+          # privilege), so systemd silently caps it at the inherited default
+          # (8 MiB) and llama-server logs "failed to mlock ... Cannot allocate
+          # memory".  Raising the hard limit here via pam_limits means the
+          # systemd user manager for venus inherits a huge memlock cap, letting
+          # the unit's LimitMEMLOCK=infinity actually apply.
+          security.pam.loginLimits = [
+            { domain = "venus"; type = "-"; item = "memlock"; value = "unlimited"; }
+          ];
+
           home-manager = {
 
             # ---- useGlobalPkgs ----
