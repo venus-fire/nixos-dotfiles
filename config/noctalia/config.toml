@@ -42,3 +42,13 @@ post_hook = "bash /home/venus/noctalia-templates/librewolf/apply.sh"
 input_path = "/home/venus/noctalia-templates/ungoogled-chromium/manifest.json"
 output_path = "$XDG_CACHE_HOME/noctalia/ungoogled-chromium/theme/manifest.json"
 post_hook = "bash /home/venus/noctalia-templates/ungoogled-chromium/apply.sh"
+
+# --- Hermes (Noctalia -> Hermes skin bridge) ---
+# Noctalia renders a Hermes skin YAML into ~/.hermes/skins/noctalia.yaml on
+# every scheme change; Hermes' gateway skin watcher repaints live. Activate
+# once with: hermes config set display.skin noctalia
+# To re-render without changing the theme: touch this file (or Media & UI ->
+# Theme in Settings). Template source: config/noctalia/templates/hermes.yaml
+[theme.templates.user.hermes]
+input_path = "/home/venus/Documents/nixos-dotfiles/config/noctalia/templates/hermes.yaml"
+output_path = "~/.hermes/skins/noctalia.yaml"

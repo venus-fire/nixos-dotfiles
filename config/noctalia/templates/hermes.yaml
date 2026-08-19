@@ -1,0 +1,49 @@
+# ============================================================================
+# Hermes skin — Noctalia template input
+# ============================================================================
+# Noctalia re-renders this into ~/.hermes/skins/noctalia.yaml whenever the
+# active color scheme changes (see [theme.templates.user.hermes] in
+# config.toml). Hermes' gateway skin watcher then repaints the CLI, TUI, and
+# desktop live -- so changing your Noctalia scheme re-themes Hermes.
+#
+# Do NOT edit the rendered output (~/.hermes/skins/noctalia.yaml); it is
+# regenerated on every theme change.
+#
+# Color tokens use the syntax open-brace open-brace colors.<role>.default.hex
+# close-brace close-brace, which expands to a #hex value from the active
+# Noctalia scheme (the '#' is included in the expansion).
+# ============================================================================
+
+name: noctalia
+description: Noctalia color scheme applied to Hermes (live)
+
+colors:
+  # Base surface + brand accent.
+  background: "{{colors.surface.default.hex}}"
+  ui_accent: "{{colors.primary.default.hex}}"
+  banner_accent: "{{colors.primary.default.hex}}"
+
+  # Text hierarchy.
+  banner_title: "{{colors.on_surface.default.hex}}"
+  banner_text: "{{colors.on_surface.default.hex}}"
+  ui_text: "{{colors.on_surface.default.hex}}"
+  banner_dim: "{{colors.surface_container.default.hex}}"
+  banner_border: "{{colors.surface_container.default.hex}}"
+  ui_border: "{{colors.surface_container.default.hex}}"
+
+  # Semantic status — mapped to the scheme's terminal roles.
+  ui_ok: "{{colors.terminal_normal_green.default.hex}}"
+  ui_warn: "{{colors.terminal_normal_yellow.default.hex}}"
+  ui_error: "{{colors.terminal_normal_red.default.hex}}"
+
+  # CLI / TUI chrome.
+  prompt: "{{colors.on_surface.default.hex}}"
+  input_rule: "{{colors.primary.default.hex}}"
+  response_border: "{{colors.primary.default.hex}}"
+  status_bar_bg: "{{colors.surface.default.hex}}"
+  status_bar_text: "{{colors.on_surface.default.hex}}"
+  status_bar_good: "{{colors.terminal_normal_green.default.hex}}"
+  status_bar_warn: "{{colors.terminal_normal_yellow.default.hex}}"
+  status_bar_critical: "{{colors.terminal_normal_red.default.hex}}"
+  session_label: "{{colors.primary.default.hex}}"
+  session_border: "{{colors.surface_container.default.hex}}"
