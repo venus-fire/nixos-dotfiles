@@ -4,6 +4,10 @@
   programs.niri.enable = true;
   services.displayManager.ly.enable = true;
 
+  # ly writes a per-boot session log to $HOME/ly-session.log by default;
+  # relocate it to the XDG state dir so it doesn't clutter the home root.
+  services.displayManager.ly.settings.session_log = ".local/state/ly-session.log";
+
   # Propagate cursor theme so xwayland-satellite and other non-niri
   # processes also pick up the custom cursor.
   #
