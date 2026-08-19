@@ -52,13 +52,3 @@ post_hook = "bash /home/venus/dev/noctalia-templates/ungoogled-chromium/apply.sh
 [theme.templates.user.hermes]
 input_path = "/home/venus/Documents/nixos-dotfiles/config/noctalia/templates/hermes.yaml"
 output_path = "~/.hermes/skins/noctalia.yaml"
-
-# --- Pywalfox-colored Firefox theme (override of the cached pywalfox-beta4
-# community template, which ships half the color slots empty) ---
-# Renders a fully-populated pywal colors.json (all 16 ANSI slots) then pushes it
-# to Firefox's Pywalfox extension via the built-in native host. Live updates, no
-# browser restart. Template source: config/noctalia/templates/pywalfox-colors.json
-[theme.templates.user.pywalfox_colors]
-input_path = "/home/venus/Documents/nixos-dotfiles/config/noctalia/templates/pywalfox-colors.json"
-output_path = "$XDG_CACHE_HOME/wal/colors.json"
-post_action = "firefox-theme"
