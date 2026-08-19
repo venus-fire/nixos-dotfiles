@@ -27,9 +27,13 @@ colors:
   banner_title: "{{colors.on_surface.default.hex}}"
   banner_text: "{{colors.on_surface.default.hex}}"
   ui_text: "{{colors.on_surface.default.hex}}"
-  banner_dim: "{{colors.surface_container.default.hex}}"
-  banner_border: "{{colors.surface_container.default.hex}}"
-  ui_border: "{{colors.surface_container.default.hex}}"
+  # Muted / secondary text (placeholder, hint, prompt-working, completion
+  # meta) must stay readable on the surface, so use the on-surface *variant*
+  # tone, NOT a surface shade (a dark container here made hints unreadable).
+  banner_dim: "{{colors.on_surface_variant.default.hex}}"
+  # Borders/rules use the outline tone so panels stay visible against the bg.
+  banner_border: "{{colors.outline.default.hex}}"
+  ui_border: "{{colors.outline.default.hex}}"
 
   # Semantic status — mapped to the scheme's terminal roles.
   ui_ok: "{{colors.terminal_normal_green.default.hex}}"
@@ -46,4 +50,4 @@ colors:
   status_bar_warn: "{{colors.terminal_normal_yellow.default.hex}}"
   status_bar_critical: "{{colors.terminal_normal_red.default.hex}}"
   session_label: "{{colors.primary.default.hex}}"
-  session_border: "{{colors.surface_container.default.hex}}"
+  session_border: "{{colors.outline.default.hex}}"
