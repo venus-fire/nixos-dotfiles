@@ -20,6 +20,7 @@
     # --- System modules ---
     ./modules/boot.nix                # bootloader & kernel
     ./modules/networking.nix          # hostname, networkmanager, wifi
+    ./modules/osint.nix               # passive OSINT CLI tools
     ./modules/locale.nix              # timezone, locale, keyboard layout
     ./modules/users.nix               # user accounts & groups
     ./modules/packages.nix            # system-wide packages
