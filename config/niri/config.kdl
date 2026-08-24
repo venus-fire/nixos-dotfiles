@@ -493,7 +493,7 @@ binds {
     Mod+Shift+Slash { show-hotkey-overlay; }
 
     // Suggested binds for running programs: terminal, app launcher, screen locker.
-    Mod+T hotkey-overlay-title="Open a Terminal: cool-retro-term" { spawn "cool-retro-term"; }
+    Mod+T hotkey-overlay-title="Open a Terminal: kitty" { spawn "kitty"; }
     // Mod+D hotkey-overlay-title="Run an Application: fuzzel" { spawn "fuzzel"; }
     Mod+D hotkey-overlay-title="open noctalia search" { spawn-sh "noctalia msg panel-toggle launcher"; }
 
