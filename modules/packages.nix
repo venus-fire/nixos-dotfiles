@@ -56,6 +56,8 @@ in
     ncdu                              # disk usage analyzer
     udiskie                           # auto-mounter & CLI helpers for external drives
     zip
+    unzip
+    unrar
 
     # --- Messaging & communication ---
     signal-desktop
