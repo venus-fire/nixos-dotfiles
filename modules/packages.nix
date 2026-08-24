@@ -80,6 +80,7 @@ in
     hermes                            # CLI AI agent (Nous Research)
     gh                                # GitHub CLI
     pi-coding-agent
+    tlrc
 
     # --- Gaming ---
     gamescope                         # micro-compositor for running games isolated
