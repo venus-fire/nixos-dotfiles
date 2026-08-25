@@ -93,7 +93,6 @@ in
     wget
     lmstudio                          # local LLM GUI
     trashy
-    openlogi
 
     # --- Authentication ---
     openssh-askpass                   # GTK GUI askpass for sudo -A / ssh prompts
