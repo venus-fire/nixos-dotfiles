@@ -100,7 +100,8 @@ in
     # --- Unstable packages ---
     pkgs-unstable.handy               # speech-to-text transcription (nixos-unstable)
     pkgs-unstable.fetch               # system info fetcher (like neofetch, nixos-unstable)
-  ];
+    pkgs-unstable.freecad
+];
 
   # ---------------------------------------------------------------------------
   # GUI ASKPASS — GTK password dialog for sudo (-A) and ssh prompts
