@@ -120,6 +120,13 @@ input {
     position x=1280 y=0
 }
 
+// External TV over HDMI (Philips FTV, DP-2): 3x scaling for readable UI.
+// The laptop display (eDP-1) keeps its default 1x scale.
+output "DP-2" {
+    scale 3
+}
+
+
 // Settings that influence how windows are positioned and sized.
 // Find more information on the wiki:
 // https://niri-wm.github.io/niri/Configuration:-Layout

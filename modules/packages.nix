@@ -85,6 +85,7 @@ in
     # --- Gaming ---
     gamescope                         # micro-compositor for running games isolated
     faugus-launcher
+    mindustry-wayland
 
     # --- Utilities ---
     volantes-cursors                  # cursor theme
