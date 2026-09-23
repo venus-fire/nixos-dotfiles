@@ -18,7 +18,6 @@
     ./symlinks.nix          # managed symlinks for niri, noctalia config
     ./qbittorrent.nix        # qBittorrent with I2P-optimised settings
     ./nicotine.nix           # Nicotine+ with AirVPN WireGuard binding
-    ./prime-agent.nix        # prime-agent RLM coding agent + kernel env
     ./himalaya.nix           # himalaya CLI email client (Gmail) + pass store
     ./llm.nix                # little-coder + mainline llama.cpp (Vulkan); self-gating
   ];

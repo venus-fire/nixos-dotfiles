@@ -114,10 +114,8 @@
     # -------------------------------------------------------------------------
     # hermes-agent — CLI AI assistant by Nous Research
     # -------------------------------------------------------------------------
-    # One of two CLI AI assistants installed system-wide (the other is
-    # prime-agent, packaged in pkgs/prime-agent.nix).  Both run as terminal
-    # programs that can read/write files, execute shell commands, search the
-    # web, and more — switch between them freely.
+    # The CLI AI assistant installed system-wide. It's a terminal program that
+    # can read/write files, execute shell commands, search the web, and more.
     # NOTE: We don't use 'follows' here because Hermes doesn't have its own
     # nixpkgs input that needs overriding.  If it did, we'd add it.
     hermes-agent = {
@@ -308,12 +306,6 @@
     # Enabled via the inline overlay module in the module list above.
     overlays.default = (final: prev: {
       little-coder = final.callPackage ./pkgs/little-coder.nix { };
-
-      # prime-agent — RLM coding agent CLI. Package = release tarball
-      # (dist/ prebuilt). prime-agent-kernel = the Python kernel env the agent
-      # runs on (ipykernel + bundled prime-agent-runtime + bundled skills).
-      prime-agent = final.callPackage ./pkgs/prime-agent.nix { };
-      prime-agent-kernel = final.callPackage ./pkgs/prime-agent-kernel.nix { };
     });
   };  # <-- end of outputs
 }  # <-- end of the flake
