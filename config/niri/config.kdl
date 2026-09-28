@@ -124,6 +124,8 @@ input {
 // The laptop display (eDP-1) keeps its default 1x scale.
 output "DP-2" {
     scale 3
+    // TEMP diagnostic: forced lower mode to test Samsung timing sync
+    mode "1280x720@60"
 }
 
 
